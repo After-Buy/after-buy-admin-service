@@ -32,8 +32,12 @@ public class AdminSessionAuthFilter extends OncePerRequestFilter {
 
 	private final ObjectMapper objectMapper;
 
-	/** 인증 없이 접근 가능한 경로 (로그인 엔드포인트) */
-	private static final String LOGIN_PATH = "/api/admin/auth/login";
+	/** 인증 없이 접근 가능한 경로 목록 (로그인 엔드포인트 및 Swagger) */
+	private static final List<String> PUBLIC_PATHS = List.of(
+			"/api/admin/auth/login",
+			"/swagger-ui",
+			"/v3/api-docs"
+	);
 
 	@Override
 	protected void doFilterInternal(
@@ -44,8 +48,9 @@ public class AdminSessionAuthFilter extends OncePerRequestFilter {
 
 		String requestUri = request.getRequestURI();
 
-		// 로그인 엔드포인트는 인증 없이 통과
-		if (requestUri.equals(LOGIN_PATH) && request.getMethod().equals("POST")) {
+		// 퍼블릭 경로(Swagger, 로그인 등)는 인증 없이 통과 (접두사 매칭 허용)
+		boolean isPublicPath = PUBLIC_PATHS.stream().anyMatch(requestUri::startsWith);
+		if (isPublicPath) {
 			filterChain.doFilter(request, response);
 			return;
 		}
