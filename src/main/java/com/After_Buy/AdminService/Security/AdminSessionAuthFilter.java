@@ -35,16 +35,14 @@ public class AdminSessionAuthFilter extends OncePerRequestFilter {
 	/** 인증 없이 접근 가능한 경로 목록 (로그인 엔드포인트 및 Swagger) */
 	private static final List<String> PUBLIC_PATHS = List.of(
 			"/api/admin/auth/login",
-			"/swagger-ui",
-			"/v3/api-docs"
-	);
+			"/api/admin/swagger-ui",
+			"/api/admin/v3/api-docs");
 
 	@Override
 	protected void doFilterInternal(
 			HttpServletRequest request,
 			HttpServletResponse response,
-			FilterChain filterChain
-	) throws ServletException, IOException {
+			FilterChain filterChain) throws ServletException, IOException {
 
 		String requestUri = request.getRequestURI();
 
@@ -73,8 +71,7 @@ public class AdminSessionAuthFilter extends OncePerRequestFilter {
 	 */
 	private void sendUnauthorizedResponse(
 			HttpServletResponse response,
-			HttpServletRequest request
-	) throws IOException {
+			HttpServletRequest request) throws IOException {
 		ErrorCode errorCode = ErrorCode.ADMIN_UNAUTHORIZED;
 
 		ErrorResponse errorResponse = ErrorResponse.builder()
