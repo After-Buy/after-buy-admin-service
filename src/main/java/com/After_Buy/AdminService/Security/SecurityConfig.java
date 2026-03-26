@@ -52,11 +52,8 @@ public class SecurityConfig {
 				.sessionCreationPolicy(SessionCreationPolicy.NEVER)
 			)
 
-			// 엔드포인트 접근 권한 설정
+			// 엔드포인트 접근 권한 설정 (실제 세션 검증은 AdminSessionAuthFilter에서 전담)
 			.authorizeHttpRequests(auth -> auth
-				// 로그인은 인증 없이 허용
-				.requestMatchers(HttpMethod.POST, "/api/admin/auth/login").permitAll()
-				// 나머지 모든 요청은 세션 필터에서 검증
 				.anyRequest().permitAll()
 			)
 
