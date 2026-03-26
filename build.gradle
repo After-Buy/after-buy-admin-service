@@ -52,8 +52,6 @@ dependencies {
 	testImplementation 'io.projectreactor:reactor-test'
 	// 권한/시큐리티 설정 연관 통합 테스트용
 	testImplementation 'org.springframework.security:spring-security-test'
-	// H2 인메모리 테스트용 DB (GitHub Actions CI 등 환경 변수 없는 빌드 환경 대응)
-	testRuntimeOnly 'com.h2database:h2'
 	// JUnit5 플랫폼 로드 엔진
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
