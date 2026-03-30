@@ -21,6 +21,7 @@ public enum ErrorCode {
 	ADMIN_ACCOUNT_LOCKED(HttpStatus.valueOf(423), "ADMIN-002", "실패 횟수 초과로 계정이 잠겼습니다. 관리자에게 문의해주세요."),
 	ADMIN_NOT_FOUND(HttpStatus.NOT_FOUND, "ADMIN-003", "존재하지 않는 관리자 계정입니다."),
 	ADMIN_UNAUTHORIZED(HttpStatus.UNAUTHORIZED, "ADMIN-004", "로그인이 필요합니다."),
+	ADMIN_LOGIN_LOG_NOT_FOUND(HttpStatus.NOT_FOUND, "ADMIN-006", "존재하지 않거나 보존기간이 지난 로그입니다."),
 
 	/* ===== 공통 (COMMON-0XX) ===== */
 	INVALID_INPUT_VALUE(HttpStatus.BAD_REQUEST, "COMMON-001", "입력값이 올바르지 않습니다."),
