@@ -128,15 +128,15 @@ public class AdminAuthController {
 	public ResponseEntity<Map<String, Object>> checkSession(HttpServletRequest request) {
 		jakarta.servlet.http.HttpSession session = request.getSession(false);
 
-		if (session == null || session.getAttribute("admin_id") == null) {
-			// 세션이 없거나 세션 내에 admin_id가 존재하지 않으면 401 반환
+		if (session == null || session.getAttribute("adminId") == null) {
+			// 세션이 없거나 세션 내에 adminId가 존재하지 않으면 401 반환
 			throw new com.After_Buy.AdminService.Exception.CustomException(
 					com.After_Buy.AdminService.Exception.ErrorCode.UNAUTHORIZED_ADMIN_SESSION);
 		}
 
 		// 세션이 유효할 경우
-		Long adminId = (Long) session.getAttribute("admin_id");
-		String adminAccount = (String) session.getAttribute("admin_account");
+		Long adminId = (Long) session.getAttribute("adminId");
+		String adminAccount = (String) session.getAttribute("adminAccount");
 
 		return ResponseEntity.ok(Map.of(
 				"success", true,
