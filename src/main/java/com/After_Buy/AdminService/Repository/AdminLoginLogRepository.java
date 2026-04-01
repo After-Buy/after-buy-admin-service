@@ -26,11 +26,12 @@ public interface AdminLoginLogRepository extends JpaRepository<AdminLoginLog, Lo
 	Page<AdminLoginLog> findAllByOrderByLoginAtDesc(Pageable pageable);
 
 	/**
-	 * session_id로 로그인 로그를 조회합니다.
+	 * session_id로 로그인 로그를 가장 최근 것 1건 조회합니다.
 	 * 로그아웃 시 해당 세션의 logout_at 업데이트에 사용됩니다.
+	 * (동일 세션으로 중복 로그인 발생 시 오류를 방지하기 위함)
 	 *
 	 * @param sessionId 세션 쿠키 ID
-	 * @return 해당 세션의 로그인 로그 (없으면 empty)
+	 * @return 해당 세션의 최근 로그인 로그 (없으면 empty)
 	 */
-	Optional<AdminLoginLog> findBySessionId(String sessionId);
+	Optional<AdminLoginLog> findFirstBySessionIdOrderByLoginAtDesc(String sessionId);
 }

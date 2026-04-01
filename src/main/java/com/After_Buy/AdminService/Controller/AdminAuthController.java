@@ -111,4 +111,40 @@ public class AdminAuthController {
 				"message", "로그아웃되었습니다."
 		));
 	}
+	/**
+	 * 관리자 세션 검증 (인증 체크)
+	 * GET /api/admin/auth/check
+	 * 현재 발급된 세션 쿠키가 유효한지 검사합니다.
+	 *
+	 * @param request HTTP 요청 객체 (세션 추출용)
+	 * @return 기존 관리자 정보 또는 401 Unauthorized
+	 */
+	@Operation(summary = "관리자 세션 검증", description = "현재 브라우저가 가지고 있는 세션 쿠키가 유효한지 검사합니다.")
+	@ApiResponses(value = {
+			@ApiResponse(responseCode = "200", description = "인증 성공 (세션 유효)"),
+			@ApiResponse(responseCode = "401", description = "인증 실패 (세션 만료 또는 없음)", content = @Content(schema = @Schema(implementation = com.After_Buy.AdminService.Dto.Response.ErrorResponse.class)))
+	})
+	@GetMapping("/check")
+	public ResponseEntity<Map<String, Object>> checkSession(HttpServletRequest request) {
+		jakarta.servlet.http.HttpSession session = request.getSession(false);
+
+		if (session == null || session.getAttribute("adminId") == null) {
+			// 세션이 없거나 세션 내에 adminId가 존재하지 않으면 401 반환
+			throw new com.After_Buy.AdminService.Exception.CustomException(
+					com.After_Buy.AdminService.Exception.ErrorCode.UNAUTHORIZED_ADMIN_SESSION);
+		}
+
+		// 세션이 유효할 경우
+		Long adminId = (Long) session.getAttribute("adminId");
+		String adminAccount = (String) session.getAttribute("adminAccount");
+
+		return ResponseEntity.ok(Map.of(
+				"success", true,
+				"data", Map.of(
+						"admin_id", adminId,
+						"admin_account", adminAccount
+				),
+				"message", "유효한 세션입니다."
+		));
+	}
 }

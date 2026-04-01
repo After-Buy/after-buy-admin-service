@@ -129,8 +129,8 @@ public class AdminAuthServiceImpl implements AdminAuthService {
 		if (session != null) {
 			String sessionId = session.getId();
 
-			// 해당 세션의 로그인 로그에 로그아웃 시각 기록
-			adminLoginLogRepository.findBySessionId(sessionId)
+			// 해당 세션의 로그인 로그에 로그아웃 시각 기록 (동일 세션 여러번 로그인 시 최신 로그 1건)
+			adminLoginLogRepository.findFirstBySessionIdOrderByLoginAtDesc(sessionId)
 					.ifPresent(AdminLoginLog::recordLogout);
 
 			session.invalidate();
