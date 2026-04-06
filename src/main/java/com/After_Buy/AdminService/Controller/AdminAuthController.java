@@ -2,6 +2,8 @@ package com.After_Buy.AdminService.Controller;
 
 import com.After_Buy.AdminService.Dto.Request.AdminLoginRequest;
 import com.After_Buy.AdminService.Dto.Response.AdminLoginResponse;
+import com.After_Buy.AdminService.Dto.Response.ApiResponse;
+import com.After_Buy.AdminService.Dto.Response.ErrorResponse;
 import com.After_Buy.AdminService.Service.AdminAuthService;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
@@ -9,9 +11,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -42,20 +42,20 @@ public class AdminAuthController {
 	 * POST /api/admin/auth/login
 	 * 사전 지급된 아이디/비밀번호로 인증하고 세션 쿠키(ADMIN_SESSION_ID)를 발급합니다.
 	 *
-	 * @param request  로그인 요청 DTO (admin_account, password)
+	 * @param request     로그인 요청 DTO (admin_account, password)
 	 * @param httpRequest 내부 요청 처리용
 	 * @param httpResponse 쿠키 발급용
 	 * @return 로그인 성공 응답 (admin_id, admin_account)
 	 */
 	@Operation(summary = "관리자 로그인", description = "사전 지급된 아이디/비밀번호로 인증하고 세션 쿠키를 발급합니다.")
 	@ApiResponses(value = {
-			@ApiResponse(responseCode = "200", description = "성공 - Set-Cookie로 ADMIN_SESSION_ID 발급"),
-			@ApiResponse(responseCode = "400", description = "필수 입력값 누락", content = @Content(schema = @Schema(implementation = com.After_Buy.AdminService.Dto.Response.ErrorResponse.class))),
-			@ApiResponse(responseCode = "401", description = "아이디/비밀번호 불일치 (ADMIN-001)", content = @Content(schema = @Schema(implementation = com.After_Buy.AdminService.Dto.Response.ErrorResponse.class))),
-			@ApiResponse(responseCode = "423", description = "계정 잠금 (ADMIN-002)", content = @Content(schema = @Schema(implementation = com.After_Buy.AdminService.Dto.Response.ErrorResponse.class)))
+			@io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "성공 - Set-Cookie로 ADMIN_SESSION_ID 발급"),
+			@io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "필수 입력값 누락", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+			@io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "아이디/비밀번호 불일치 (ADMIN-001)", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+			@io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "423", description = "계정 잠금 (ADMIN-002)", content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
 	})
 	@PostMapping("/login")
-	public ResponseEntity<Map<String, Object>> login(
+	public ResponseEntity<ApiResponse<Map<String, Object>>> login(
 			@Valid @RequestBody AdminLoginRequest request,
 			HttpServletRequest httpRequest,
 			HttpServletResponse httpResponse
@@ -70,14 +70,11 @@ public class AdminAuthController {
 		sessionCookie.setMaxAge(60 * 60 * 8); // 8시간
 		httpResponse.addCookie(sessionCookie);
 
-		return ResponseEntity.ok(Map.of(
-				"success", true,
-				"data", Map.of(
-						"admin_id", loginResponse.getAdminId(),
-						"admin_account", loginResponse.getAdminAccount()
-				),
-				"message", "로그인에 성공했습니다."
-		));
+		Map<String, Object> data = Map.of(
+				"admin_id", loginResponse.getAdminId(),
+				"admin_account", loginResponse.getAdminAccount()
+		);
+		return ResponseEntity.ok(ApiResponse.success(data, "로그인에 성공했습니다."));
 	}
 
 	/**
@@ -85,14 +82,14 @@ public class AdminAuthController {
 	 * POST /api/admin/auth/logout
 	 * 세션 쿠키를 무효화합니다.
 	 *
-	 * @param httpRequest 내부 요청 처리용
+	 * @param httpRequest  내부 요청 처리용
 	 * @param httpResponse 쿠키 만료용
 	 * @return 로그아웃 성공 메시지
 	 */
 	@Operation(summary = "관리자 로그아웃", description = "발급된 세션 쿠키를 무효화합니다.")
-	@ApiResponse(responseCode = "200", description = "로그아웃 성공")
+	@io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "로그아웃 성공")
 	@PostMapping("/logout")
-	public ResponseEntity<Map<String, Object>> logout(
+	public ResponseEntity<ApiResponse<Void>> logout(
 			HttpServletRequest httpRequest,
 			HttpServletResponse httpResponse
 	) {
@@ -106,11 +103,9 @@ public class AdminAuthController {
 		expiredCookie.setMaxAge(0);
 		httpResponse.addCookie(expiredCookie);
 
-		return ResponseEntity.ok(Map.of(
-				"success", true,
-				"message", "로그아웃되었습니다."
-		));
+		return ResponseEntity.ok(ApiResponse.successWithMessage("로그아웃되었습니다."));
 	}
+
 	/**
 	 * 관리자 세션 검증 (인증 체크)
 	 * GET /api/admin/auth/check
@@ -121,11 +116,11 @@ public class AdminAuthController {
 	 */
 	@Operation(summary = "관리자 세션 검증", description = "현재 브라우저가 가지고 있는 세션 쿠키가 유효한지 검사합니다.")
 	@ApiResponses(value = {
-			@ApiResponse(responseCode = "200", description = "인증 성공 (세션 유효)"),
-			@ApiResponse(responseCode = "401", description = "인증 실패 (세션 만료 또는 없음)", content = @Content(schema = @Schema(implementation = com.After_Buy.AdminService.Dto.Response.ErrorResponse.class)))
+			@io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "인증 성공 (세션 유효)"),
+			@io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "인증 실패 (세션 만료 또는 없음)", content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
 	})
 	@GetMapping("/check")
-	public ResponseEntity<Map<String, Object>> checkSession(HttpServletRequest request) {
+	public ResponseEntity<ApiResponse<Map<String, Object>>> checkSession(HttpServletRequest request) {
 		jakarta.servlet.http.HttpSession session = request.getSession(false);
 
 		if (session == null || session.getAttribute("adminId") == null) {
@@ -134,17 +129,13 @@ public class AdminAuthController {
 					com.After_Buy.AdminService.Exception.ErrorCode.UNAUTHORIZED_ADMIN_SESSION);
 		}
 
-		// 세션이 유효할 경우
 		Long adminId = (Long) session.getAttribute("adminId");
 		String adminAccount = (String) session.getAttribute("adminAccount");
 
-		return ResponseEntity.ok(Map.of(
-				"success", true,
-				"data", Map.of(
-						"admin_id", adminId,
-						"admin_account", adminAccount
-				),
-				"message", "유효한 세션입니다."
-		));
+		Map<String, Object> data = Map.of(
+				"admin_id", adminId,
+				"admin_account", adminAccount
+		);
+		return ResponseEntity.ok(ApiResponse.success(data, "유효한 세션입니다."));
 	}
 }
