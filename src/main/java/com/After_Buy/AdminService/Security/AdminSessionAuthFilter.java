@@ -36,7 +36,9 @@ public class AdminSessionAuthFilter extends OncePerRequestFilter {
 	private static final List<String> PUBLIC_PATHS = List.of(
 			"/api/admin/auth/login",
 			"/swagger-ui",       // Swagger UI 기본 서빙 경로
-			"/v3/api-docs");     // OpenAPI 스펙 JSON 기본 경로
+			"/v3/api-docs",      // OpenAPI 스펙 JSON 기본 경로
+			"/api/admin/swagger-ui", // 배포 환경 Swagger 경로
+			"/api/admin/v3/api-docs"); // 배포 환경 OpenAPI 경로
 
 	@Override
 	protected void doFilterInternal(
