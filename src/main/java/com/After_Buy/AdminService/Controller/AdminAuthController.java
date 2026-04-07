@@ -4,16 +4,19 @@ import com.After_Buy.AdminService.Dto.Request.AdminLoginRequest;
 import com.After_Buy.AdminService.Dto.Response.AdminLoginResponse;
 import com.After_Buy.AdminService.Dto.Response.ApiResponse;
 import com.After_Buy.AdminService.Dto.Response.ErrorResponse;
+import com.After_Buy.AdminService.Exception.CustomException;
+import com.After_Buy.AdminService.Exception.ErrorCode;
 import com.After_Buy.AdminService.Service.AdminAuthService;
-import jakarta.servlet.http.Cookie;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-import jakarta.validation.Valid;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -42,8 +45,8 @@ public class AdminAuthController {
 	 * POST /api/admin/auth/login
 	 * 사전 지급된 아이디/비밀번호로 인증하고 세션 쿠키(ADMIN_SESSION_ID)를 발급합니다.
 	 *
-	 * @param request     로그인 요청 DTO (admin_account, password)
-	 * @param httpRequest 내부 요청 처리용
+	 * @param request      로그인 요청 DTO (admin_account, password)
+	 * @param httpRequest  내부 요청 처리용
 	 * @param httpResponse 쿠키 발급용
 	 * @return 로그인 성공 응답 (admin_id, admin_account)
 	 */
@@ -58,11 +61,11 @@ public class AdminAuthController {
 	public ResponseEntity<ApiResponse<Map<String, Object>>> login(
 			@Valid @RequestBody AdminLoginRequest request,
 			HttpServletRequest httpRequest,
-			HttpServletResponse httpResponse
-	) {
+			HttpServletResponse httpResponse) {
 		AdminLoginResponse loginResponse = adminAuthService.login(request, httpRequest);
 
-		// Set-Cookie: ADMIN_SESSION_ID=...; HttpOnly; Secure; SameSite=Strict; Path=/api/admin
+		// Set-Cookie: ADMIN_SESSION_ID=...; HttpOnly; Secure; SameSite=Strict;
+		// Path=/api/admin
 		Cookie sessionCookie = new Cookie("ADMIN_SESSION_ID", loginResponse.getSessionId());
 		sessionCookie.setHttpOnly(true);
 		sessionCookie.setSecure(true);
@@ -72,8 +75,7 @@ public class AdminAuthController {
 
 		Map<String, Object> data = Map.of(
 				"admin_id", loginResponse.getAdminId(),
-				"admin_account", loginResponse.getAdminAccount()
-		);
+				"admin_account", loginResponse.getAdminAccount());
 		return ResponseEntity.ok(ApiResponse.success(data, "로그인에 성공했습니다."));
 	}
 
@@ -91,8 +93,7 @@ public class AdminAuthController {
 	@PostMapping("/logout")
 	public ResponseEntity<ApiResponse<Void>> logout(
 			HttpServletRequest httpRequest,
-			HttpServletResponse httpResponse
-	) {
+			HttpServletResponse httpResponse) {
 		adminAuthService.logout(httpRequest);
 
 		// 쿠키 만료 처리 (maxAge=0으로 즉시 삭제)
@@ -121,12 +122,11 @@ public class AdminAuthController {
 	})
 	@GetMapping("/check")
 	public ResponseEntity<ApiResponse<Map<String, Object>>> checkSession(HttpServletRequest request) {
-		jakarta.servlet.http.HttpSession session = request.getSession(false);
+		HttpSession session = request.getSession(false);
 
 		if (session == null || session.getAttribute("adminId") == null) {
-			// 세션이 없거나 세션 내에 adminId가 존재하지 않으면 401 반환
-			throw new com.After_Buy.AdminService.Exception.CustomException(
-					com.After_Buy.AdminService.Exception.ErrorCode.UNAUTHORIZED_ADMIN_SESSION);
+			/* 세션이 없거나 세션 내에 adminId가 존재하지 않으면 401 반환 */
+			throw new CustomException(ErrorCode.UNAUTHORIZED_ADMIN_SESSION);
 		}
 
 		Long adminId = (Long) session.getAttribute("adminId");
@@ -134,8 +134,7 @@ public class AdminAuthController {
 
 		Map<String, Object> data = Map.of(
 				"admin_id", adminId,
-				"admin_account", adminAccount
-		);
+				"admin_account", adminAccount);
 		return ResponseEntity.ok(ApiResponse.success(data, "유효한 세션입니다."));
 	}
 }
