@@ -57,15 +57,29 @@ public class AdminSessionAuthFilter extends OncePerRequestFilter {
 
 		// 기존 세션 조회 (false = 없어도 새로 생성하지 않음)
 		HttpSession session = request.getSession(false);
+		boolean hasValidSession = (session != null && session.getAttribute("adminId") != null);
 
-		// 세션 없음 또는 adminId 속성 없음 → 401 반환
-		if (session == null || session.getAttribute("adminId") == null) {
-			log.warn("[SessionAuthFilter] 미인증 접근 차단 - path={}", requestUri);
-			sendUnauthorizedResponse(response, request);
+		if (hasValidSession) {
+			filterChain.doFilter(request, response);
 			return;
 		}
 
-		filterChain.doFilter(request, response);
+		// GET /api/admin/announcements 경로는 JWT 인증 사용자도 접근 가능
+		boolean isJwtAllowedPath = "GET".equalsIgnoreCase(request.getMethod()) &&
+				requestUri.startsWith("/api/admin/announcements");
+
+		if (isJwtAllowedPath) {
+			org.springframework.security.core.Authentication auth = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+			if (auth != null && auth.isAuthenticated()) {
+				filterChain.doFilter(request, response);
+				return;
+			}
+		}
+
+		// 세션도 없고 (혹은 JWT 허용 경로인데 JWT도 없는 경우) 401 반환
+		log.warn("[SessionAuthFilter] 미인증 접근 차단 - path={}", requestUri);
+		sendUnauthorizedResponse(response, request);
+		return;
 	}
 
 	/**
