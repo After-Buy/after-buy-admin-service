@@ -23,7 +23,7 @@ public class JwtTokenProvider {
 
     private final SecretKey secretKey;
 
-    public JwtTokenProvider(@Value("${INTERNAL_SECRET_KEY}") String secret) {
+    public JwtTokenProvider(@Value("${JWT_SECRET}") String secret) {
         // 원래 Auth Service의 JWT 시크릿을 써야 하나, 여기서는 편의상/공용이므로
         // 내부 통신 키 또는 JWT_SECRET 환경변수를 활용합니다. (본 프로젝트 구조에서는 통일된 키를 주로 사용)
         // 주의: 실제 앱에서는 Auth Service에서 서명할 때 쓴 `jwt.secret`와 동일해야 합니다.
