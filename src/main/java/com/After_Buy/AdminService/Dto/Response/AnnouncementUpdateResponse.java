@@ -9,17 +9,17 @@ import lombok.Getter;
 import java.time.LocalDateTime;
 
 /**
- * 공지사항 등록 응답 DTO
- * POST /api/admin/announcements 응답에 사용됩니다.
- * 등록된 공지사항 전체 정보와 FCM 푸시 발송 여부(push_sent)를 반환합니다.
+ * 공지사항 수정 응답 DTO
+ * PUT /api/admin/announcements/{announcement_id} 응답에 사용됩니다.
+ * 수정된 공지사항의 전체 필드를 반환합니다.
  *
- * @since : 2026.04.10
+ * @since : 2026.04.15
  * @version : 0.0.1
  * @author : 최준혁
  */
 @Getter
 @Builder
-public class AnnouncementCreateResponse {
+public class AnnouncementUpdateResponse {
 
 	@JsonProperty("announcement_id")
 	private Long announcementId;
@@ -43,20 +43,13 @@ public class AnnouncementCreateResponse {
 	private LocalDateTime updatedAt;
 
 	/**
-	 * push_sent: 비동기 FCM 푸시 발송 요청 여부. 실제 수신 여부가 아닌 발송 요청 성공 여부를 반환합니다.
-	 */
-	@JsonProperty("push_sent")
-	private Boolean pushSent;
-
-	/**
-	 * Announcement 엔티티로부터 등록 응답 DTO를 생성합니다.
+	 * Announcement 엔티티로부터 수정 응답 DTO를 생성합니다.
 	 *
-	 * @param announcement : 저장된 공지사항 엔티티
-	 * @param pushSent     : FCM 푸시 발송 요청 성공 여부
-	 * @return : 공지사항 등록 응답 DTO
+	 * @param announcement : 수정 완료된 공지사항 엔티티
+	 * @return : 공지사항 수정 응답 DTO
 	 */
-	public static AnnouncementCreateResponse from(Announcement announcement, boolean pushSent) {
-		return AnnouncementCreateResponse.builder()
+	public static AnnouncementUpdateResponse from(Announcement announcement) {
+		return AnnouncementUpdateResponse.builder()
 				.announcementId(announcement.getAnnouncementId())
 				.title(announcement.getTitle())
 				.category(announcement.getCategory())
@@ -65,7 +58,6 @@ public class AnnouncementCreateResponse {
 				.createdBy(announcement.getCreatedBy())
 				.createdAt(announcement.getCreatedAt())
 				.updatedAt(announcement.getUpdatedAt())
-				.pushSent(pushSent)
 				.build();
 	}
 }

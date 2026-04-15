@@ -5,6 +5,7 @@ import com.After_Buy.AdminService.Dto.Response.AnnouncementCreateResponse;
 import com.After_Buy.AdminService.Dto.Response.AnnouncementDetailResponse;
 import com.After_Buy.AdminService.Dto.Response.AnnouncementListResponse;
 import com.After_Buy.AdminService.Dto.Response.AnnouncementReadResponse;
+import com.After_Buy.AdminService.Dto.Response.AnnouncementUpdateResponse;
 import com.After_Buy.AdminService.Dto.Response.ApiResponse;
 import com.After_Buy.AdminService.Exception.CustomException;
 import com.After_Buy.AdminService.Exception.ErrorCode;
@@ -24,13 +25,15 @@ import org.springframework.web.bind.annotation.*;
 
 /**
  * 관리자 공지사항 관리 컨트롤러
- * GET  /api/admin/announcements              — 공지사항 목록 조회 (관리자/사용자 공용)
- * POST /api/admin/announcements              — 공지사항 등록 (관리자 전용)
- * GET  /api/admin/announcements/{id}         — 공지사항 상세 조회 (관리자/사용자 공용)
- * POST /api/admin/announcements/{id}/read   — 공지사항 읽음 처리 (사용자 전용, JWT 인증)
+ * GET    /api/admin/announcements              — 공지사항 목록 조회 (관리자/사용자 공용)
+ * POST   /api/admin/announcements              — 공지사항 등록 (관리자 전용)
+ * GET    /api/admin/announcements/{id}         — 공지사항 상세 조회 (관리자/사용자 공용)
+ * POST   /api/admin/announcements/{id}/read    — 공지사항 읽음 처리 (사용자 전용, JWT 인증)
+ * PUT    /api/admin/announcements/{id}         — 공지사항 수정 (관리자 전용)
+ * DELETE /api/admin/announcements/{id}         — 공지사항 삭제 (관리자 전용)
  *
  * @since : 2026.04.15
- * @version : 0.0.3
+ * @version : 0.0.4
  * @author : 최준혁
  */
 @Tag(name = "Announcements Admin", description = "공지사항 관리 (관리자)")
@@ -104,13 +107,14 @@ public class AnnouncementController {
 	/**
 	 * 공지사항 상세 조회 (관리자/사용자 공용)
 	 * 딥링크(afterbuy://announcements/{announcement_id}) 진입점으로도 활용됩니다.
-	 * 존재하지 않는 공지사항 ID 요청 시 404(ADMIN-005)를 반환합니다.
+	 * 존재하지 않는 공지사항 ID 요청 시 404(ADMIN-003)을 반환합니다.
 	 *
-	 * @param announcementId 조회할 공지사항 ID (Path Variable)
-	 * @return 공지사항 상세 정보
-	 * @since 2026.04.15
-	 * @version 0.0.1
-	 * @author 최준혁
+	 * @param announcementId : 조회할 공지사항 ID (Path Variable)
+	 * @return : 공지사항 상세 정보
+	 * @throws CustomException : 공지사항 미존재 시 ANNOUNCEMENT_NOT_FOUND (ADMIN-003)
+	 * @since : 2026.04.15
+	 * @version : 0.0.1
+	 * @author : 최준혁
 	 */
 	@Operation(summary = "공지사항 상세 조회 (관리자/사용자 공용)", description = "공지사항 ID로 상세 내용을 조회합니다. 딥링크(afterbuy://announcements/{id})로도 접근 가능합니다.")
 	@GetMapping("/{announcementId}")
@@ -152,5 +156,52 @@ public class AnnouncementController {
 		AnnouncementReadResponse response = announcementService.readAnnouncement(announcementId, userId);
 
 		return ResponseEntity.ok(ApiResponse.success(response));
+	}
+
+	/**
+	 * 공지사항 수정 (관리자 전용)
+	 * AdminSessionAuthFilter에서 세션 검증 완료 후 진입하므로 session NPE 방어 불필요.
+	 * 요청 구조는 POST 등록과 동일 (title, category, content, is_pinned).
+	 *
+	 * @param announcementId    : 수정할 공지사항 ID (Path Variable)
+	 * @param request           : 수정 요청 DTO
+	 * @param httpServletRequest : HttpServletRequest (세션 추출용)
+	 * @return : 수정된 공지사항 전체 데이터
+	 * @throws CustomException : 공지사항 미존재 시 ANNOUNCEMENT_NOT_FOUND
+	 * @since : 2026.04.15
+	 * @version : 0.0.1
+	 * @author : 최준혁
+	 */
+	@Operation(summary = "공지사항 수정 (관리자 전용)", description = "제목, 카테고리, 본문, 상단 고정 여부를 수정합니다. 실패 시 400(필수항목 누락) 404(미존재) 반환.")
+	@PutMapping("/{announcementId}")
+	public ResponseEntity<ApiResponse<AnnouncementUpdateResponse>> updateAnnouncement(
+			@PathVariable Long announcementId,
+			@Valid @RequestBody AnnouncementCreateRequest request) {
+
+		AnnouncementUpdateResponse response = announcementService.updateAnnouncement(announcementId, request);
+
+		return ResponseEntity.ok(ApiResponse.success(response));
+	}
+
+	/**
+	 * 공지사항 삭제 (관리자 전용)
+	 * AdminSessionAuthFilter에서 세션 검증 완료 후 진입하므로 session NPE 방어 불필요.
+	 * 연관된 읽음 이력(announcement_reads)은 DB CASCADE DELETE로 자동 제거됩니다.
+	 *
+	 * @param announcementId : 삭제할 공지사항 ID (Path Variable)
+	 * @return : 삭제 성공 메시지
+	 * @throws CustomException : 공지사항 미존재 시 ANNOUNCEMENT_NOT_FOUND
+	 * @since : 2026.04.15
+	 * @version : 0.0.1
+	 * @author : 최준혁
+	 */
+	@Operation(summary = "공지사항 삭제 (관리자 전용)", description = "해당 공지사항을 삭제합니다. 연관 읽음 이력도 CASCADE 삭제됩니다. 실패 시 404(미존재) 반환.")
+	@DeleteMapping("/{announcementId}")
+	public ResponseEntity<ApiResponse<Void>> deleteAnnouncement(
+			@PathVariable Long announcementId) {
+
+		announcementService.deleteAnnouncement(announcementId);
+
+		return ResponseEntity.ok(ApiResponse.successWithMessage("공지사항이 삭제되었습니다."));
 	}
 }

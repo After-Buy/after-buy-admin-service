@@ -7,9 +7,12 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 
 /**
- * 읽음 여부 리포지토리
+ * 공지사항 읽음 이력 리포지터리
+ * announcement_reads 테이블에 대한 CRUD 및 커스텀 쿼리를 제공합니다.
  *
- * @author 최준혁
+ * @since : 2026.04.10
+ * @version : 0.0.1
+ * @author : 최준혁
  */
 @Repository
 public interface AnnouncementReadRepository extends JpaRepository<AnnouncementRead, Long> {

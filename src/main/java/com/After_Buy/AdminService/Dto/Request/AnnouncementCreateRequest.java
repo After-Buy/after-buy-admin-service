@@ -7,9 +7,12 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 /**
- * 공지사항 등록 요청 DTO
+ * 공지사항 등록/수정 요청 DTO
+ * POST /api/admin/announcements 및 PUT /api/admin/announcements/{id} 에서 공용으로 사용됩니다.
  *
- * @author 최준혁
+ * @since : 2026.04.10
+ * @version : 0.0.1
+ * @author : 최준혁
  */
 @Getter
 @NoArgsConstructor

@@ -6,6 +6,7 @@ import com.After_Buy.AdminService.Dto.Response.AnnouncementCreateResponse;
 import com.After_Buy.AdminService.Dto.Response.AnnouncementDetailResponse;
 import com.After_Buy.AdminService.Dto.Response.AnnouncementListResponse;
 import com.After_Buy.AdminService.Dto.Response.AnnouncementReadResponse;
+import com.After_Buy.AdminService.Dto.Response.AnnouncementUpdateResponse;
 import com.After_Buy.AdminService.Entity.Announcement;
 import com.After_Buy.AdminService.Entity.AnnouncementCategory;
 import com.After_Buy.AdminService.Entity.AnnouncementRead;
@@ -155,18 +156,16 @@ public class AnnouncementServiceImpl implements AnnouncementService {
 
     private AnnouncementListResponse.AnnouncementItem mapToDto(Announcement a, LocalDate today, List<Long> readIds,
             Long userId) {
-        // is_new: 오늘 날짜인지 비교
+        /* is_new: 오늘 날짜인지 비교하여 서버에서 계산 */
         boolean isNew = a.getCreatedAt().toLocalDate().isEqual(today);
-        // userId가 있으면 읽음 여부 세팅, 관리자(null)면 모두 true(또는 무관) 처리하되, 일단 기본값 false
+        /* userId가 있으면 읽음 여부 세팅, 관리자(null)면 false로 처리 */
         Boolean isRead = (userId != null) ? readIds.contains(a.getAnnouncementId()) : false;
 
         return AnnouncementListResponse.AnnouncementItem.builder()
                 .announcementId(a.getAnnouncementId())
                 .title(a.getTitle())
                 .category(a.getCategory())
-                .content(a.getContent())
                 .isPinned(a.getIsPinned())
-                .createdBy(a.getCreatedBy())
                 .createdAt(a.getCreatedAt())
                 .isNew(isNew)
                 .isRead(isRead)
@@ -213,5 +212,54 @@ public class AnnouncementServiceImpl implements AnnouncementService {
         return AnnouncementReadResponse.builder()
                 .readAt(saved.getReadAt())
                 .build();
+    }
+
+    /**
+     * 공지사항 수정 (관리자 전용)
+     * find 후 엔티티 update() 호출 → dirty checking으로 UPDATE 쿼리 자동 실행
+     * @UpdateTimestamp에 의해 updated_at이 자동 갱신됩니다.
+     *
+     * @param announcementId : 수정할 공지사항 ID
+     * @param request        : 수정 요청 정보
+     * @return : 수정 완료된 공지사항 응답 DTO
+     * @throws CustomException : 공지사항 미존재 시 ANNOUNCEMENT_NOT_FOUND
+     * @since : 2026.04.15
+     * @author : 최준혁
+     */
+    @Override
+    @Transactional
+    public AnnouncementUpdateResponse updateAnnouncement(Long announcementId, AnnouncementCreateRequest request) {
+        /* 공지사항 존재 여부 확인 - 없으면 ANNOUNCEMENT_NOT_FOUND 예외 발생 */
+        Announcement announcement = announcementRepository.findById(announcementId)
+                .orElseThrow(() -> new CustomException(ErrorCode.ANNOUNCEMENT_NOT_FOUND));
+
+        /* 엔티티 Dirty Checking으로 UPDATE 처리 */
+        announcement.update(
+                request.getTitle(),
+                request.getCategory(),
+                request.getContent(),
+                request.getIsPinned()
+        );
+
+        return AnnouncementUpdateResponse.from(announcement);
+    }
+
+    /**
+     * 공지사항 삭제 (관리자 전용)
+     * 연관된 announcement_reads 레코드는 DB FK CASCADE DELETE로 자동 처리됩니다.
+     *
+     * @param announcementId : 삭제할 공지사항 ID
+     * @throws CustomException : 공지사항 미존재 시 ANNOUNCEMENT_NOT_FOUND
+     * @since : 2026.04.15
+     * @author : 최준혁
+     */
+    @Override
+    @Transactional
+    public void deleteAnnouncement(Long announcementId) {
+        /* 공지사항 존재 여부 확인 - 없으면 ANNOUNCEMENT_NOT_FOUND 예외 발생 */
+        Announcement announcement = announcementRepository.findById(announcementId)
+                .orElseThrow(() -> new CustomException(ErrorCode.ANNOUNCEMENT_NOT_FOUND));
+
+        announcementRepository.delete(announcement);
     }
 }
