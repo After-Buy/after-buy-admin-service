@@ -26,7 +26,7 @@ public class DashboardResponse {
 	private DashboardOcrStatsResponse ocrStats;
 
 	@JsonProperty("recent_announcements")
-	private List<AnnouncementListResponse.AnnouncementItem> recentAnnouncements;
+	private List<DashboardAnnouncementResponse> recentAnnouncements;
 
 	@JsonProperty("unresolved_error_logs")
 	private List<DashboardErrorLogResponse> unresolvedErrorLogs;
@@ -36,7 +36,7 @@ public class DashboardResponse {
 
 	@Builder
 	public DashboardResponse(DashboardUserStatsResponse userStats, DashboardOcrStatsResponse ocrStats, 
-							 List<AnnouncementListResponse.AnnouncementItem> recentAnnouncements, 
+							 List<DashboardAnnouncementResponse> recentAnnouncements, 
 							 List<DashboardErrorLogResponse> unresolvedErrorLogs, Long unresolvedErrorCount) {
 		this.userStats = userStats;
 		this.ocrStats = ocrStats;

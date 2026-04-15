@@ -23,29 +23,17 @@ public class DashboardUserStatsResponse {
 	@JsonProperty("new_users_7d")
 	private Long newUsers7d;
 
-	@JsonProperty("new_users_prev_7d")
-	private Long newUsersPrev7d;
-
-	@JsonProperty("change_count")
-	private Long changeCount;
-
-	@JsonProperty("change_rate")
-	private Double changeRate;
+	@JsonProperty("new_users_7d_change_rate")
+	private Double newUsers7dChangeRate;
 
 	@JsonProperty("change_direction")
 	private String changeDirection;
 
-	@JsonProperty("new_users_7d_change_rate")
-	private Double newUsers7dChangeRate;
-
 	@Builder
-	public DashboardUserStatsResponse(Long totalUsers, Long newUsers7d, Long newUsersPrev7d, Long changeCount, Double changeRate, String changeDirection, Double newUsers7dChangeRate) {
+	public DashboardUserStatsResponse(Long totalUsers, Long newUsers7d, Double newUsers7dChangeRate, String changeDirection) {
 		this.totalUsers = totalUsers;
 		this.newUsers7d = newUsers7d;
-		this.newUsersPrev7d = newUsersPrev7d;
-		this.changeCount = changeCount;
-		this.changeRate = changeRate;
-		this.changeDirection = changeDirection;
 		this.newUsers7dChangeRate = newUsers7dChangeRate;
+		this.changeDirection = changeDirection;
 	}
 }
