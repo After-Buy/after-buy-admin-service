@@ -64,9 +64,10 @@ public class AdminSessionAuthFilter extends OncePerRequestFilter {
 			return;
 		}
 
-		// GET /api/admin/announcements 경로는 JWT 인증 사용자도 접근 가능
-		boolean isJwtAllowedPath = "GET".equalsIgnoreCase(request.getMethod()) &&
-				requestUri.startsWith("/api/admin/announcements");
+		// GET /api/admin/announcements (목록 및 상세) 경로는 JWT 인증 사용자도 접근 가능
+		// POST /api/admin/announcements/{id}/read 경로도 JWT 인증 사용자 전용 접근 가능
+		boolean isJwtAllowedPath = ("GET".equalsIgnoreCase(request.getMethod()) && requestUri.startsWith("/api/admin/announcements")) ||
+				("POST".equalsIgnoreCase(request.getMethod()) && requestUri.matches("^/api/admin/announcements/\\d+/read$"));
 
 		if (isJwtAllowedPath) {
 			org.springframework.security.core.Authentication auth = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();

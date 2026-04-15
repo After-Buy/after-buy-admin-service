@@ -15,4 +15,5 @@ import java.util.List;
 public interface AnnouncementReadRepository extends JpaRepository<AnnouncementRead, Long> {
     List<AnnouncementRead> findByUserIdAndAnnouncement_AnnouncementIdIn(Long userId, List<Long> announcementIds);
     boolean existsByUserIdAndAnnouncement_AnnouncementId(Long userId, Long announcementId);
+    AnnouncementRead findByUserIdAndAnnouncement_AnnouncementId(Long userId, Long announcementId);
 }

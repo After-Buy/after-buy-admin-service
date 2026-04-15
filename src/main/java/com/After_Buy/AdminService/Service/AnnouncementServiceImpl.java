@@ -5,8 +5,10 @@ import com.After_Buy.AdminService.Dto.Request.AnnouncementCreateRequest;
 import com.After_Buy.AdminService.Dto.Response.AnnouncementCreateResponse;
 import com.After_Buy.AdminService.Dto.Response.AnnouncementDetailResponse;
 import com.After_Buy.AdminService.Dto.Response.AnnouncementListResponse;
+import com.After_Buy.AdminService.Dto.Response.AnnouncementReadResponse;
 import com.After_Buy.AdminService.Entity.Announcement;
 import com.After_Buy.AdminService.Entity.AnnouncementCategory;
+import com.After_Buy.AdminService.Entity.AnnouncementRead;
 import com.After_Buy.AdminService.Exception.CustomException;
 import com.After_Buy.AdminService.Exception.ErrorCode;
 import com.After_Buy.AdminService.Repository.AnnouncementReadRepository;
@@ -60,8 +62,7 @@ public class AnnouncementServiceImpl implements AnnouncementService {
                 "새 공지사항이 등록되었습니다.",
                 saved.getTitle(),
                 deepLink,
-                saved.getAnnouncementId()
-        );
+                saved.getAnnouncementId());
 
         // 명세서에 따라 응답 시 push_sent 는 true로 고정하여 반환 (비동기이므로 요청 발송 여부만 알림)
         return AnnouncementCreateResponse.from(saved, true);
@@ -69,7 +70,8 @@ public class AnnouncementServiceImpl implements AnnouncementService {
 
     @Override
     @Transactional(readOnly = true)
-    public AnnouncementListResponse getAnnouncementList(String categoryStr, String keyword, int page, int size, Long userId) {
+    public AnnouncementListResponse getAnnouncementList(String categoryStr, String keyword, int page, int size,
+            Long userId) {
         AnnouncementCategory category = null;
         if (StringUtils.hasText(categoryStr) && !"ALL".equalsIgnoreCase(categoryStr)) {
             category = AnnouncementCategory.valueOf(categoryStr.toUpperCase());
@@ -151,7 +153,8 @@ public class AnnouncementServiceImpl implements AnnouncementService {
         return AnnouncementDetailResponse.from(announcement, today);
     }
 
-    private AnnouncementListResponse.AnnouncementItem mapToDto(Announcement a, LocalDate today, List<Long> readIds, Long userId) {
+    private AnnouncementListResponse.AnnouncementItem mapToDto(Announcement a, LocalDate today, List<Long> readIds,
+            Long userId) {
         // is_new: 오늘 날짜인지 비교
         boolean isNew = a.getCreatedAt().toLocalDate().isEqual(today);
         // userId가 있으면 읽음 여부 세팅, 관리자(null)면 모두 true(또는 무관) 처리하되, 일단 기본값 false
@@ -167,6 +170,48 @@ public class AnnouncementServiceImpl implements AnnouncementService {
                 .createdAt(a.getCreatedAt())
                 .isNew(isNew)
                 .isRead(isRead)
+                .build();
+    }
+
+    /**
+     * 공지사항 읽음 처리 (사용자 전용)
+     * announcement_reads 테이블에 (user_id, announcement_id) 레코드를 삽입합니다.
+     * UNIQUE 제약조건으로 중복 삽입을 방지하며, 이미 읽은 경우 기존 read_at을 반환합니다. (idempotent)
+     *
+     * @param announcementId : 공지사항 ID
+     * @param userId         : JWT 인증 사용자 ID
+     * @return : 읽음 처리 결과 (read_at)
+     * @throws CustomException : 공지사항 미존재 시 ANNOUNCEMENT_NOT_FOUND
+     * @since : 2026.04.15
+     * @author : 최준혁
+     */
+    @Override
+    @Transactional
+    public AnnouncementReadResponse readAnnouncement(Long announcementId, Long userId) {
+        // 공지사항 존재 여부 확인
+        Announcement announcement = announcementRepository.findById(announcementId)
+                .orElseThrow(() -> new CustomException(ErrorCode.ANNOUNCEMENT_NOT_FOUND));
+
+        // 이미 읽음 처리된 내역이 있는지 확인 (idempotent)
+        AnnouncementRead existingRead = announcementReadRepository.findByUserIdAndAnnouncement_AnnouncementId(userId,
+                announcementId);
+
+        if (existingRead != null) {
+            return AnnouncementReadResponse.builder()
+                    .readAt(existingRead.getReadAt())
+                    .build();
+        }
+
+        // 새 읽음 기록 생성
+        AnnouncementRead newRead = AnnouncementRead.builder()
+                .userId(userId)
+                .announcement(announcement)
+                .build();
+
+        AnnouncementRead saved = announcementReadRepository.save(newRead);
+
+        return AnnouncementReadResponse.builder()
+                .readAt(saved.getReadAt())
                 .build();
     }
 }

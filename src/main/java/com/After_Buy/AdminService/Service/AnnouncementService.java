@@ -4,6 +4,7 @@ import com.After_Buy.AdminService.Dto.Request.AnnouncementCreateRequest;
 import com.After_Buy.AdminService.Dto.Response.AnnouncementCreateResponse;
 import com.After_Buy.AdminService.Dto.Response.AnnouncementDetailResponse;
 import com.After_Buy.AdminService.Dto.Response.AnnouncementListResponse;
+import com.After_Buy.AdminService.Dto.Response.AnnouncementReadResponse;
 
 /**
  * 공지사항 서비스 인터페이스
@@ -41,4 +42,15 @@ public interface AnnouncementService {
      * @throws com.After_Buy.AdminService.Exception.CustomException 공지사항 미존재 시 ANNOUNCEMENT_NOT_FOUND
      */
     AnnouncementDetailResponse getAnnouncementDetail(Long announcementId);
+
+	/**
+	 * 공지사항 읽음 처리 (사용자 전용)
+	 * UNIQUE 제약조건에 따라 이미 읽은 경우 멱등성(idempotent) 처리하여 기존 read_at을 반환합니다.
+	 *
+	 * @param announcementId : 공지사항 ID
+	 * @param userId : JWT 인증 사용자 ID
+	 * @return : 읽음 처리 결과 (read_at)
+	 * @throws CustomException : 공지사항 미존재 시 ANNOUNCEMENT_NOT_FOUND
+	 */
+	AnnouncementReadResponse readAnnouncement(Long announcementId, Long userId);
 }

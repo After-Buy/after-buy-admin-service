@@ -4,7 +4,10 @@ import com.After_Buy.AdminService.Dto.Request.AnnouncementCreateRequest;
 import com.After_Buy.AdminService.Dto.Response.AnnouncementCreateResponse;
 import com.After_Buy.AdminService.Dto.Response.AnnouncementDetailResponse;
 import com.After_Buy.AdminService.Dto.Response.AnnouncementListResponse;
+import com.After_Buy.AdminService.Dto.Response.AnnouncementReadResponse;
 import com.After_Buy.AdminService.Dto.Response.ApiResponse;
+import com.After_Buy.AdminService.Exception.CustomException;
+import com.After_Buy.AdminService.Exception.ErrorCode;
 import com.After_Buy.AdminService.Security.UserPrincipal;
 import com.After_Buy.AdminService.Service.AnnouncementService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -21,13 +24,14 @@ import org.springframework.web.bind.annotation.*;
 
 /**
  * 관리자 공지사항 관리 컨트롤러
- * GET /api/admin/announcements        — 공지사항 목록 조회 (관리자/사용자 공용)
- * POST /api/admin/announcements       — 공지사항 등록 (관리자 전용)
- * GET /api/admin/announcements/{id}   — 공지사항 상세 조회 (관리자/사용자 공용)
+ * GET  /api/admin/announcements              — 공지사항 목록 조회 (관리자/사용자 공용)
+ * POST /api/admin/announcements              — 공지사항 등록 (관리자 전용)
+ * GET  /api/admin/announcements/{id}         — 공지사항 상세 조회 (관리자/사용자 공용)
+ * POST /api/admin/announcements/{id}/read   — 공지사항 읽음 처리 (사용자 전용, JWT 인증)
  *
- * @author 최준혁
- * @since 2026.04.15
- * @version 0.0.2
+ * @since : 2026.04.15
+ * @version : 0.0.3
+ * @author : 최준혁
  */
 @Tag(name = "Announcements Admin", description = "공지사항 관리 (관리자)")
 @RestController
@@ -114,6 +118,38 @@ public class AnnouncementController {
 			@PathVariable Long announcementId) {
 
 		AnnouncementDetailResponse response = announcementService.getAnnouncementDetail(announcementId);
+
+		return ResponseEntity.ok(ApiResponse.success(response));
+	}
+
+	/**
+	 * 공지사항 읽음 처리 (사용자 전용 — JWT 인증 필수)
+	 * 공지사항 상세 채화면 진입 시 호출되며, announcement_reads 테이블에 기록됩니다.
+	 * 이미 읽은 공지사항일 경우 멱등성(idempotent) 처리되어 기존 read_at을 반환합니다.
+	 *
+	 * @param announcementId : 공지사항 ID (Path Variable)
+	 * @return : 읽음 처리 시간 (read_at)
+	 * @throws CustomException : JWT 사용자 인증 없음 시 UNAUTHORIZED_ADMIN_SESSION
+	 * @throws CustomException : 공지사항 미존재 시 ANNOUNCEMENT_NOT_FOUND
+	 * @since : 2026.04.15
+	 * @version : 0.0.1
+	 * @author : 최준혁
+	 */
+	@Operation(summary = "공지사항 읽음 처리 (사용자 전용)", description = "사용자가 공지사항 상세를 조회할 때 호출합니다. 이미 읽은 업목시 기존 read_at을 반환(idempotent)합니다.")
+	@PostMapping("/{announcementId}/read")
+	public ResponseEntity<ApiResponse<AnnouncementReadResponse>> readAnnouncement(
+			@PathVariable Long announcementId) {
+
+		/* JWT 인증 사용자인 경우에만 SecurityContext에서 userId 추출 */
+		Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+		if (auth == null || !auth.isAuthenticated() || !(auth.getPrincipal() instanceof UserPrincipal)) {
+			/* 사용자 전용 엔드포인트 — JWT 토큰 없으면 원칙적으로 필터에서 유입 차단되어야 하나,
+			 * 관리자 세션으로 접근하는 경우 등의 방어 코드로 CustomException을 throw */
+			throw new CustomException(ErrorCode.UNAUTHORIZED_ADMIN_SESSION);
+		}
+
+		Long userId = ((UserPrincipal) auth.getPrincipal()).getUserId();
+		AnnouncementReadResponse response = announcementService.readAnnouncement(announcementId, userId);
 
 		return ResponseEntity.ok(ApiResponse.success(response));
 	}
