@@ -34,6 +34,8 @@ public class SecurityConfig {
 
 	private final ObjectMapper objectMapper;
 
+	private final JwtAuthenticationFilter jwtAuthenticationFilter;
+
 	/**
 	 * Security 필터 체인 설정
 	 *
@@ -61,8 +63,9 @@ public class SecurityConfig {
 			.formLogin(AbstractHttpConfigurer::disable)
 			.httpBasic(AbstractHttpConfigurer::disable)
 
-			// 커스텀 세션 인증 필터 등록
-			.addFilterBefore(adminSessionAuthFilter(), UsernamePasswordAuthenticationFilter.class);
+			// 커스텀 세션 인증 필터 등록 및 JWT 필터 등록
+			.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+			.addFilterAfter(adminSessionAuthFilter(), JwtAuthenticationFilter.class);
 
 		return http.build();
 	}

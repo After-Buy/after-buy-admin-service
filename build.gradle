@@ -39,6 +39,11 @@ dependencies {
 	// API 명세서 포맷 자동 생성 및 Swagger UI
 	implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.16'
 
+	// 앱에서 넘어온 JWT 토큰 페이로드 자체 해석 및 위조 검증용 (JJWT)
+	implementation 'io.jsonwebtoken:jjwt-api:0.12.5'
+	runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.12.5'
+	runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.12.5'
+
 	// DTO 및 엔티티 코드 다이어트용 Lombok (Getter, Setter)
 	compileOnly 'org.projectlombok:lombok'
 	annotationProcessor 'org.projectlombok:lombok'
