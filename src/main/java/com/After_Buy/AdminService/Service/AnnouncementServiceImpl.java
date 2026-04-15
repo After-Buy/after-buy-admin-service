@@ -33,7 +33,9 @@ import java.util.stream.Collectors;
 /**
  * 공지사항 서비스 구현체
  *
- * @author 최준혁
+ * @since : 2026.04.10
+ * @version : 0.0.1
+ * @author : 최준혁
  */
 @Slf4j
 @Service
@@ -133,15 +135,16 @@ public class AnnouncementServiceImpl implements AnnouncementService {
                 .build();
     }
 
-    /**
-     * 공지사항 상세 조회 (관리자/사용자 공용)
-     * 존재하지 않는 ID 요청 시 ANNOUNCEMENT_NOT_FOUND 예외를 발생시킵니다.
-     *
-     * @param announcementId 조회할 공지사항 ID
-     * @return 공지사항 상세 응답 DTO
-     * @since 2026.04.15
-     * @author 최준혁
-     */
+	/**
+	 * 공지사항 상세 조회 (관리자/사용자 공용)
+	 * 존재하지 않는 ID 요청 시 ANNOUNCEMENT_NOT_FOUND 예외를 발생시킵니다.
+	 *
+	 * @param announcementId : 조회할 공지사항 ID
+	 * @return : 공지사항 상세 응답 DTO
+	 * @since : 2026.04.15
+	 * @version : 0.0.1
+	 * @author : 최준혁
+	 */
     @Override
     @Transactional(readOnly = true)
     public AnnouncementDetailResponse getAnnouncementDetail(Long announcementId) {
@@ -246,7 +249,7 @@ public class AnnouncementServiceImpl implements AnnouncementService {
 
     /**
      * 공지사항 삭제 (관리자 전용)
-     * 연관된 announcement_reads 레코드는 DB FK CASCADE DELETE로 자동 처리됩니다.
+     * 외래 키 제약 조건을 고려하여 연관된 announcement_reads 레코드를 먼저 삭제한 후 공지사항을 삭제합니다.
      *
      * @param announcementId : 삭제할 공지사항 ID
      * @throws CustomException : 공지사항 미존재 시 ANNOUNCEMENT_NOT_FOUND
@@ -260,6 +263,10 @@ public class AnnouncementServiceImpl implements AnnouncementService {
         Announcement announcement = announcementRepository.findById(announcementId)
                 .orElseThrow(() -> new CustomException(ErrorCode.ANNOUNCEMENT_NOT_FOUND));
 
+        /* 연관된 읽음 기록 먼저 삭제 (외래 키 제약 조건 해결) */
+        announcementReadRepository.deleteByAnnouncement_AnnouncementId(announcementId);
+
+        /* 공지사항 삭제 */
         announcementRepository.delete(announcement);
     }
 }

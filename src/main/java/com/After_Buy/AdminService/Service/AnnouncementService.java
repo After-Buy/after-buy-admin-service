@@ -10,6 +10,8 @@ import com.After_Buy.AdminService.Dto.Response.AnnouncementUpdateResponse;
 /**
  * 공지사항 서비스 인터페이스
  *
+ * @since : 2026.04.10
+ * @version : 0.0.1
  * @author : 최준혁
  */
 public interface AnnouncementService {
@@ -68,10 +70,13 @@ public interface AnnouncementService {
 
 	/**
 	 * 공지사항 삭제 (관리자 전용)
-	 * 해당 공지사항과 연관된 읽음 이력(announcement_reads)은 DB CASCADE로 처리됩니다.
+	 * 외래 키 제약 조건을 고려하여 연관된 모든 읽음 기록을 먼저 삭제한 후 공지사항을 삭제합니다.
 	 *
 	 * @param announcementId : 삭제할 공지사항 ID
 	 * @throws com.After_Buy.AdminService.Exception.CustomException : 공지사항 미존재 시 ANNOUNCEMENT_NOT_FOUND
+	 * @since : 2026.04.15
+	 * @version : 0.0.1
+	 * @author : 최준혁
 	 */
 	void deleteAnnouncement(Long announcementId);
 }

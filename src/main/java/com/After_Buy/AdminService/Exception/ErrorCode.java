@@ -8,9 +8,9 @@ import org.springframework.http.HttpStatus;
  * 서비스 전역 에러 코드 Enum
  * 에러 발생 시 프론트에게 내려줄 HTTP 상태 코드, 커스텀 코드, 메시지를 관리합니다.
  *
- * @author 최준혁
- * @since 2026.03.26
- * @version 0.0.1
+ * @since : 2026.03.26
+ * @version : 0.0.1
+ * @author : 최준혁
  */
 @Getter
 @RequiredArgsConstructor

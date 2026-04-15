@@ -14,9 +14,9 @@ import java.time.LocalDateTime;
  * GET /api/admin/announcements/{announcement_id} 응답에 사용됩니다.
  * 관리자/사용자 공용으로 사용됩니다.
  *
- * @author 최준혁
- * @since 2026.04.15
- * @version 0.0.1
+ * @since : 2026.04.15
+ * @version : 0.0.1
+ * @author : 최준혁
  */
 @Getter
 @Builder

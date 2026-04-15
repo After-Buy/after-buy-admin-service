@@ -48,12 +48,12 @@ public class AnnouncementController {
 	 * 공지사항 등록 (관리자 전용)
 	 * AdminSessionAuthFilter에서 세션 검증 완료 후 진입하므로 session NPE 방어 불필요.
 	 *
-	 * @param request            공지사항 등록 DTO
-	 * @param httpServletRequest HttpServletRequest (세션 추출용)
-	 * @return 등록 완료된 공지사항 정보 (201 Created)
-	 * @since 2026.04.15
-	 * @version 0.0.2
-	 * @author 최준혁
+	 * @param request            : 공지사항 등록 DTO
+	 * @param httpServletRequest : HttpServletRequest (세션 추출용)
+	 * @return : 등록 완료된 공지사항 정보 (201 Created)
+	 * @since : 2026.04.15
+	 * @version : 0.0.2
+	 * @author : 최준혁
 	 */
 	@Operation(summary = "공지사항 등록 (관리자 전용)", description = "등록 완료 후 push_enabled=1인 사용자에게 FCM 푸시를 발송합니다.")
 	@PostMapping
@@ -75,14 +75,14 @@ public class AnnouncementController {
 	 * JWT 토큰이 있으면 SecurityContext에서 userId를 추출하여 읽음(is_read) 여부를 반영합니다.
 	 * JWT 토큰이 없는 관리자 세션 접근의 경우 userId는 null로 처리됩니다.
 	 *
-	 * @param category 카테고리 필터 (NOTICE / MAINTENANCE / UPDATE / ALL)
-	 * @param keyword  제목/본문 검색어
-	 * @param page     페이지 번호 (1-based, 기본값 1)
-	 * @param size     페이지당 항목 수 (기본값 10)
-	 * @return 공지사항 목록 (상단고정 + 일반 + 페이지네이션)
-	 * @since 2026.04.15
-	 * @version 0.0.2
-	 * @author 최준혁
+	 * @param category : 카테고리 필터 (NOTICE / MAINTENANCE / UPDATE / ALL)
+	 * @param keyword  : 제목/본문 검색어
+	 * @param page     : 페이지 번호 (1-based, 기본값 1)
+	 * @param size     : 페이지당 항목 수 (기본값 10)
+	 * @return : 공지사항 목록 (상단고정 + 일반 + 페이지네이션)
+	 * @since : 2026.04.15
+	 * @version : 0.0.2
+	 * @author : 최준혁
 	 */
 	@Operation(summary = "공지사항 목록 조회 (관리자/사용자 공용)", description = "JWT 토큰을 제공하면 사용자별 읽음(is_read) 정보가 반영됩니다.")
 	@GetMapping
@@ -186,11 +186,11 @@ public class AnnouncementController {
 	/**
 	 * 공지사항 삭제 (관리자 전용)
 	 * AdminSessionAuthFilter에서 세션 검증 완료 후 진입하므로 session NPE 방어 불필요.
-	 * 연관된 읽음 이력(announcement_reads)은 DB CASCADE DELETE로 자동 제거됩니다.
+	 * 연관된 읽음 이력(announcement_reads)은 서비스 로직에서 명시적으로 삭제됩니다.
 	 *
 	 * @param announcementId : 삭제할 공지사항 ID (Path Variable)
 	 * @return : 삭제 성공 메시지
-	 * @throws CustomException : 공지사항 미존재 시 ANNOUNCEMENT_NOT_FOUND
+	 * @throws CustomException : 공지사항 미존재 시 ANNOUNCEMENT_NOT_FOUND (ADMIN-003)
 	 * @since : 2026.04.15
 	 * @version : 0.0.1
 	 * @author : 최준혁
