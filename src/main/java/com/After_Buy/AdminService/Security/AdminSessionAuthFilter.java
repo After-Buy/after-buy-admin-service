@@ -88,7 +88,7 @@ public class AdminSessionAuthFilter extends OncePerRequestFilter {
 	private void sendUnauthorizedResponse(
 			HttpServletResponse response,
 			HttpServletRequest request) throws IOException {
-		ErrorCode errorCode = ErrorCode.ADMIN_UNAUTHORIZED;
+		ErrorCode errorCode = ErrorCode.UNAUTHORIZED_ADMIN_SESSION;
 
 		ErrorResponse errorResponse = ErrorResponse.builder()
 				.timestamp(LocalDateTime.now())

@@ -2,7 +2,7 @@ package com.After_Buy.AdminService.Service;
 
 import com.After_Buy.AdminService.Dto.Request.AnnouncementCreateRequest;
 import com.After_Buy.AdminService.Dto.Response.AnnouncementCreateResponse;
-
+import com.After_Buy.AdminService.Dto.Response.AnnouncementDetailResponse;
 import com.After_Buy.AdminService.Dto.Response.AnnouncementListResponse;
 
 /**
@@ -11,7 +11,7 @@ import com.After_Buy.AdminService.Dto.Response.AnnouncementListResponse;
  * @author 최준혁
  */
 public interface AnnouncementService {
-    
+
     /**
      * 공지사항 등록 및 푸시 알림 발송
      *
@@ -32,4 +32,13 @@ public interface AnnouncementService {
      * @return 공지사항 목록 응답 DTO
      */
     AnnouncementListResponse getAnnouncementList(String category, String keyword, int page, int size, Long userId);
+
+    /**
+     * 공지사항 상세 조회 (관리자/사용자 공용)
+     *
+     * @param announcementId 조회할 공지사항 ID
+     * @return 공지사항 상세 응답 DTO
+     * @throws com.After_Buy.AdminService.Exception.CustomException 공지사항 미존재 시 ANNOUNCEMENT_NOT_FOUND
+     */
+    AnnouncementDetailResponse getAnnouncementDetail(Long announcementId);
 }

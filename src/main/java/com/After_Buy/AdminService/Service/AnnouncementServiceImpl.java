@@ -3,9 +3,12 @@ package com.After_Buy.AdminService.Service;
 import com.After_Buy.AdminService.Client.NotificationInternalClient;
 import com.After_Buy.AdminService.Dto.Request.AnnouncementCreateRequest;
 import com.After_Buy.AdminService.Dto.Response.AnnouncementCreateResponse;
+import com.After_Buy.AdminService.Dto.Response.AnnouncementDetailResponse;
 import com.After_Buy.AdminService.Dto.Response.AnnouncementListResponse;
 import com.After_Buy.AdminService.Entity.Announcement;
 import com.After_Buy.AdminService.Entity.AnnouncementCategory;
+import com.After_Buy.AdminService.Exception.CustomException;
+import com.After_Buy.AdminService.Exception.ErrorCode;
 import com.After_Buy.AdminService.Repository.AnnouncementReadRepository;
 import com.After_Buy.AdminService.Repository.AnnouncementRepository;
 import lombok.RequiredArgsConstructor;
@@ -125,6 +128,27 @@ public class AnnouncementServiceImpl implements AnnouncementService {
                 .announcements(normalItems)
                 .pagination(pagination)
                 .build();
+    }
+
+    /**
+     * 공지사항 상세 조회 (관리자/사용자 공용)
+     * 존재하지 않는 ID 요청 시 ANNOUNCEMENT_NOT_FOUND 예외를 발생시킵니다.
+     *
+     * @param announcementId 조회할 공지사항 ID
+     * @return 공지사항 상세 응답 DTO
+     * @since 2026.04.15
+     * @author 최준혁
+     */
+    @Override
+    @Transactional(readOnly = true)
+    public AnnouncementDetailResponse getAnnouncementDetail(Long announcementId) {
+        /* 공지사항 DB 조회 - 없으면 ANNOUNCEMENT_NOT_FOUND 예외 발생 */
+        Announcement announcement = announcementRepository.findById(announcementId)
+                .orElseThrow(() -> new CustomException(ErrorCode.ANNOUNCEMENT_NOT_FOUND));
+
+        LocalDate today = LocalDate.now();
+
+        return AnnouncementDetailResponse.from(announcement, today);
     }
 
     private AnnouncementListResponse.AnnouncementItem mapToDto(Announcement a, LocalDate today, List<Long> readIds, Long userId) {
