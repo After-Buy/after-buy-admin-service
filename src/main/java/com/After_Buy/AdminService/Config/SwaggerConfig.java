@@ -11,7 +11,9 @@ import org.springframework.context.annotation.Configuration;
 /**
  * 전역 Swagger(OpenAPI) 설정
  *
- * @author 최준혁
+ * @since : 2026.04.10
+ * @version : 0.0.1
+ * @author : 최준혁
  */
 @Configuration
 public class SwaggerConfig {

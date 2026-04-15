@@ -12,7 +12,9 @@ import java.util.Map;
 /**
  * Notification Service 내부 API 호출 클라이언트
  *
- * @author 최준혁
+ * @since : 2026.04.14
+ * @version : 0.0.1
+ * @author : 최준혁
  */
 @Slf4j
 @Component

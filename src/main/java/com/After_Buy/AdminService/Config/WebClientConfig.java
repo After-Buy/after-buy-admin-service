@@ -8,7 +8,9 @@ import org.springframework.web.reactive.function.client.WebClient;
  * WebClient 설정
  * 타 마이크로서비스 내부 호출 지원 부분
  *
- * @author 최준혁
+ * @since : 2026.04.14
+ * @version : 0.0.1
+ * @author : 최준혁
  */
 @Configuration
 public class WebClientConfig {
