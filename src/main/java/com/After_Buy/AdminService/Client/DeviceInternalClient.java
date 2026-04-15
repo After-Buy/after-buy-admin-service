@@ -9,6 +9,8 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
+import java.time.LocalDate;
+
 /**
  * Device Service 내부 API 호출 클라이언트
  *
@@ -32,24 +34,22 @@ public class DeviceInternalClient {
 
 	/**
 	 * OCR 실패 통계 조회 (비동기 Mono 반환)
-	 * 실패 시 empty Mono 반환
 	 */
 	public Mono<JsonNode> getOcrStatsMono() {
+		LocalDate endDate = LocalDate.now();
+		LocalDate startDate = endDate.minusDays(7); // 최근 7일간의 지표 조회
+
+		String url = deviceServiceUrl + "/internal/ocr-stats?start_date={sd}&end_date={ed}";
+
 		return webClient.get()
-				.uri(deviceServiceUrl + "/internal/ocr-stats")
+				.uri(url, startDate.toString(), endDate.toString())
 				.header("X-Internal-Secret", internalSecret)
 				.retrieve()
 				.bodyToMono(String.class)
 				.flatMap(responseString -> {
 					try {
 						JsonNode rootNode = objectMapper.readTree(responseString);
-						if (rootNode.has("success") && rootNode.get("success").asBoolean() && rootNode.has("data")) {
-							JsonNode dataNode = rootNode.get("data");
-							if (dataNode.has("summary")) {
-								return Mono.just(dataNode.get("summary"));
-							}
-							return Mono.just(dataNode);
-						}
+						return Mono.just(rootNode);
 					} catch (Exception e) {
 						log.error("[DeviceInternalClient] JSON 파싱 실패: {}", e.getMessage());
 					}

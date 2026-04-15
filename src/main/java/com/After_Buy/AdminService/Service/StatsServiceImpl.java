@@ -50,7 +50,7 @@ public class StatsServiceImpl implements StatsService {
 						return objectMapper.treeToValue(node, DashboardUserStatsResponse.class);
 					} catch (Exception e) {
 						log.error("[StatsServiceImpl] 사용자 통계 파싱 실패: {}", e.getMessage());
-						return null;
+						return DashboardUserStatsResponse.builder().build();
 					}
 				})
 				.defaultIfEmpty(DashboardUserStatsResponse.builder().build());
@@ -58,29 +58,35 @@ public class StatsServiceImpl implements StatsService {
 		Mono<DashboardOcrStatsResponse> ocrStatsMono = deviceInternalClient.getOcrStatsMono()
 				.map(node -> {
 					try {
-						return objectMapper.treeToValue(node, DashboardOcrStatsResponse.class);
+						// 1. 기본 필드 매핑 (total_attempts, failure_count, modified_count)
+						DashboardOcrStatsResponse rawResponse = objectMapper.treeToValue(node, DashboardOcrStatsResponse.class);
+						
+						// 2. 누락된 필드 계산 (success_count, success_rate)
+						long total = rawResponse.getTotalAttempts() != null ? rawResponse.getTotalAttempts() : 0L;
+						long failure = rawResponse.getFailureCount() != null ? rawResponse.getFailureCount() : 0L;
+						long success = Math.max(0, total - failure);
+						double rate = (total > 0) ? (double) success / total * 100.0 : 0.0;
+
+						return DashboardOcrStatsResponse.builder()
+								.totalAttempts(total)
+								.failureCount(failure)
+								.modifiedCount(rawResponse.getModifiedCount())
+								.successCount(success)
+								.successRate(rate)
+								.build();
 					} catch (Exception e) {
-						log.error("[StatsServiceImpl] OCR 통계 파싱 실패: {}", e.getMessage());
-						return null;
+						log.error("[StatsServiceImpl] OCR 통계 파싱 및 계산 실패: {}", e.getMessage());
+						return DashboardOcrStatsResponse.builder().build();
 					}
 				})
 				.defaultIfEmpty(DashboardOcrStatsResponse.builder().build());
 
-		// 2. 외부 서비스 동시 호출 및 결과 대기 (병렬 처리)
-		// Mono.zip은 여러 비동기 작업을 동시에 시작하고 모든 결과가 완료될 때까지 기다립니다.
-		DashboardUserStatsResponse userStats = userStatsMono.block();
-		DashboardOcrStatsResponse ocrStats = ocrStatsMono.block();
-		// 실제 상용 환경에서는 컨트롤러 단계까지 Mono를 반환하는 것이 좋지만, 
-		// 현재 동기 컨트롤러 구조를 유지하면서 내부 호출만 병렬화하기 위해 block()을 사용합니다.
-		// 순차적으로 block()을 각자 호출하면 병렬성이 깨질 수 있으나, WebClient Mono는 시작 전까지 실행되지 않으므로 
-		// 호출 위치를 조정하여 병렬성을 확보합니다. 
-		// 더 정확하게는 zip().block()을 사용하면 두 요청이 동시에 나갑니다.
-		
-		var zipped = Mono.zip(userStatsMono, ocrStatsMono).block();
-		if (zipped != null) {
-			userStats = zipped.getT1();
-			ocrStats = zipped.getT2();
-		}
+		// 2. 외부 서비스 동시 호출 및 결과 대기 (병렬 병합 처리)
+		// 이전 코드의 개별 .block() 호출을 제거하여 실제 병렬 기동을 보장함.
+		var zippedResult = Mono.zip(userStatsMono, ocrStatsMono).block();
+
+		DashboardUserStatsResponse userStats = (zippedResult != null) ? zippedResult.getT1() : DashboardUserStatsResponse.builder().build();
+		DashboardOcrStatsResponse ocrStats = (zippedResult != null) ? zippedResult.getT2() : DashboardOcrStatsResponse.builder().build();
 
 		// 3. 내부 DB 데이터 조회 (동기 호출)
 		LocalDateTime oneMonthAgo = LocalDateTime.now().minusDays(30);

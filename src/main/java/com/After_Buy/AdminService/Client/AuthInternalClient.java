@@ -32,7 +32,6 @@ public class AuthInternalClient {
 
 	/**
 	 * 사용자 통계 정보 조회 (비동기 Mono 반환)
-	 * 실패 시 empty Mono 반환
 	 */
 	public Mono<JsonNode> getUserStatsMono() {
 		return webClient.get()
@@ -43,9 +42,7 @@ public class AuthInternalClient {
 				.flatMap(responseString -> {
 					try {
 						JsonNode rootNode = objectMapper.readTree(responseString);
-						if (rootNode.has("success") && rootNode.get("success").asBoolean() && rootNode.has("data")) {
-							return Mono.just(rootNode.get("data"));
-						}
+						return Mono.just(rootNode);
 					} catch (Exception e) {
 						log.error("[AuthInternalClient] JSON 파싱 실패: {}", e.getMessage());
 					}
