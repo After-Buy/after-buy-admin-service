@@ -7,8 +7,11 @@ import com.After_Buy.AdminService.Dto.Response.DashboardErrorLogResponse;
 import com.After_Buy.AdminService.Dto.Response.DashboardOcrStatsResponse;
 import com.After_Buy.AdminService.Dto.Response.DashboardResponse;
 import com.After_Buy.AdminService.Dto.Response.DashboardUserStatsResponse;
+import com.After_Buy.AdminService.Dto.Response.OcrStatsDetailResponse;
 import com.After_Buy.AdminService.Entity.Announcement;
 import com.After_Buy.AdminService.Entity.ErrorLog;
+import com.After_Buy.AdminService.Exception.CustomException;
+import com.After_Buy.AdminService.Exception.ErrorCode;
 import com.After_Buy.AdminService.Repository.AnnouncementRepository;
 import com.After_Buy.AdminService.Repository.ErrorLogRepository;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -18,7 +21,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -173,6 +178,91 @@ public class StatsServiceImpl implements StatsService {
 						return null;
 					}
 				})
+				.block();
+	}
+
+	@Override
+	public OcrStatsDetailResponse getOcrStatsDetail(String period) {
+		LocalDate endDate = LocalDate.now();
+		LocalDate startDate;
+
+		switch (period != null ? period.toUpperCase() : "MONTH") {
+			case "WEEK":
+				startDate = endDate.minusDays(7);
+				break;
+			case "ALL":
+				startDate = LocalDate.of(2000, 1, 1);
+				break;
+			case "MONTH":
+			default:
+				startDate = endDate.minusDays(30);
+				period = "MONTH"; // 잘못된 값일 경우 강제 리셋
+				break;
+		}
+
+		final String safePeriod = period.toUpperCase();
+
+		return deviceInternalClient.getOcrStatsMono(startDate, endDate)
+				.map(node -> {
+					try {
+						long total = node.path("total_attempts").asLong(0L);
+						long failure = node.path("failure_count").asLong(0L);
+						long modified = node.path("modified_count").asLong(0L);
+
+						double failRate = total > 0 ? (double) failure / total * 100.0 : 0.0;
+						double modRate = total > 0 ? (double) modified / total * 100.0 : 0.0;
+
+						// 소수점 1자리 통일
+						failRate = Math.round(failRate * 10.0) / 10.0;
+						modRate = Math.round(modRate * 10.0) / 10.0;
+
+						OcrStatsDetailResponse.Summary summary = OcrStatsDetailResponse.Summary.builder()
+								.totalAttempts(total)
+								.failureCount(failure)
+								.modifiedCount(modified)
+								.failureRate(failRate)
+								.modifiedRate(modRate)
+								.build();
+
+						List<OcrStatsDetailResponse.FieldModifiedStat> fieldStats = new ArrayList<>();
+						if (node.hasNonNull("field_modified_stats") && node.get("field_modified_stats").isArray()) {
+							for (JsonNode fNode : node.get("field_modified_stats")) {
+								String fName = fNode.path("field_name").asText("");
+								long fCount = fNode.path("modified_count").asLong(0L);
+								double fRate = modified > 0 ? (double) fCount / modified * 100.0 : 0.0;
+								fRate = Math.round(fRate * 10.0) / 10.0;
+
+								fieldStats.add(OcrStatsDetailResponse.FieldModifiedStat.builder()
+										.fieldName(fName)
+										.modifiedCount(fCount)
+										.rate(fRate)
+										.build());
+							}
+						}
+
+						List<OcrStatsDetailResponse.DailyFailureTrend> dailyTrend = new ArrayList<>();
+						if (node.hasNonNull("daily_failure_trend") && node.get("daily_failure_trend").isArray()) {
+							for (JsonNode tNode : node.get("daily_failure_trend")) {
+								dailyTrend.add(OcrStatsDetailResponse.DailyFailureTrend.builder()
+										.date(tNode.path("date").asText(""))
+										.failureCount(tNode.path("failure_count").asLong(0L))
+										.build());
+							}
+						}
+
+						return OcrStatsDetailResponse.builder()
+								.period(safePeriod)
+								.summary(summary)
+								.fieldModifiedStats(fieldStats)
+								.dailyFailureTrend(dailyTrend)
+								.build();
+
+					} catch (Exception e) {
+						log.error("[StatsServiceImpl] OCR 통계 상세 파싱 실패: {}", e.getMessage());
+						throw new CustomException(ErrorCode.INTERNAL_SERVER_ERROR);
+					}
+				})
+				.switchIfEmpty(Mono.error(new CustomException(ErrorCode.INTERNAL_SERVER_ERROR)))
 				.block();
 	}
 }

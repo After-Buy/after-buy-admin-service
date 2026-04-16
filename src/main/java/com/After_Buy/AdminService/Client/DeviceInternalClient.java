@@ -33,12 +33,18 @@ public class DeviceInternalClient {
 	private String deviceServiceUrl;
 
 	/**
-	 * OCR 실패 통계 조회 (비동기 Mono 반환)
+	 * OCR 실패 통계 조회 (최근 7일 - 대시보드 요약용 기본값 유지)
 	 */
 	public Mono<JsonNode> getOcrStatsMono() {
 		LocalDate endDate = LocalDate.now();
-		LocalDate startDate = endDate.minusDays(7); // 최근 7일간의 지표 조회
+		LocalDate startDate = endDate.minusDays(7);
+		return getOcrStatsMono(startDate, endDate);
+	}
 
+	/**
+	 * OCR 실패 통계 조회 (동적 기간 설정)
+	 */
+	public Mono<JsonNode> getOcrStatsMono(LocalDate startDate, LocalDate endDate) {
 		String url = deviceServiceUrl + "/internal/ocr-stats?start_date={sd}&end_date={ed}";
 
 		return webClient.get()
