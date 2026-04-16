@@ -47,9 +47,50 @@ public class StatsServiceImpl implements StatsService {
 		Mono<DashboardUserStatsResponse> userStatsMono = authInternalClient.getUserStatsMono()
 				.map(node -> {
 					try {
-						return objectMapper.treeToValue(node, DashboardUserStatsResponse.class);
+						// 1. 기본 필드 매핑
+						long total = node.path("total_users").asLong(0L);
+						long totalPrev7d = node.path("total_users_prev_7d").asLong(0L);
+						long current7d = node.path("new_users_7d").asLong(0L);
+						long prev7d = node.path("new_users_prev_7d").asLong(0L);
+
+						// 2. 전체 사용자 증감률 및 방향 계산 (누적 vs 7일 전 누적)
+						double totalRate = 0.0;
+						String totalDirection = "STAY";
+						if (totalPrev7d == 0) {
+							if (total > 0) {
+								totalRate = 100.0;
+								totalDirection = "UP";
+							}
+						} else {
+							totalRate = Math.round(((double) (total - totalPrev7d) / totalPrev7d) * 1000.0) / 10.0;
+							if (total > totalPrev7d) totalDirection = "UP";
+							else if (total < totalPrev7d) totalDirection = "DOWN";
+						}
+
+						// 3. 신규 사용자 증감률 및 방향 계산 (최근 7일 합계 vs 직전 7일 합계)
+						double newRate = 0.0;
+						String newDirection = "STAY";
+						if (prev7d == 0) {
+							if (current7d > 0) {
+								newRate = 100.0;
+								newDirection = "UP";
+							}
+						} else {
+							newRate = Math.round(((double) (current7d - prev7d) / prev7d) * 1000.0) / 10.0;
+							if (current7d > prev7d) newDirection = "UP";
+							else if (current7d < prev7d) newDirection = "DOWN";
+						}
+
+						return DashboardUserStatsResponse.builder()
+								.totalUsers(total)
+								.totalUsersChangeRate(totalRate)
+								.totalUsersChangeDirection(totalDirection)
+								.newUsers7d(current7d)
+								.newUsers7dChangeRate(newRate)
+								.changeDirection(newDirection)
+								.build();
 					} catch (Exception e) {
-						log.error("[StatsServiceImpl] 사용자 통계 파싱 실패: {}", e.getMessage());
+						log.error("[StatsServiceImpl] 사용자 통계 파싱 및 계산 실패: {}", e.getMessage());
 						return DashboardUserStatsResponse.builder().build();
 					}
 				})

@@ -20,6 +20,12 @@ public class DashboardUserStatsResponse {
 	@JsonProperty("total_users")
 	private Long totalUsers;
 
+	@JsonProperty("total_users_change_rate")
+	private Double totalUsersChangeRate;
+
+	@JsonProperty("total_users_change_direction")
+	private String totalUsersChangeDirection;
+
 	@JsonProperty("new_users_7d")
 	private Long newUsers7d;
 
@@ -30,8 +36,11 @@ public class DashboardUserStatsResponse {
 	private String changeDirection;
 
 	@Builder
-	public DashboardUserStatsResponse(Long totalUsers, Long newUsers7d, Double newUsers7dChangeRate, String changeDirection) {
+	public DashboardUserStatsResponse(Long totalUsers, Double totalUsersChangeRate, String totalUsersChangeDirection, 
+									  Long newUsers7d, Double newUsers7dChangeRate, String changeDirection) {
 		this.totalUsers = totalUsers;
+		this.totalUsersChangeRate = totalUsersChangeRate;
+		this.totalUsersChangeDirection = totalUsersChangeDirection;
 		this.newUsers7d = newUsers7d;
 		this.newUsers7dChangeRate = newUsers7dChangeRate;
 		this.changeDirection = changeDirection;
