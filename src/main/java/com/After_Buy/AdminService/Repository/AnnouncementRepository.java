@@ -36,4 +36,9 @@ public interface AnnouncementRepository extends JpaRepository<Announcement, Long
            "(:category IS NULL OR a.category = :category) " +
            "AND (:keyword IS NULL OR a.title LIKE %:keyword% OR a.content LIKE %:keyword%)")
     Page<Announcement> findAllByKeyword(@Param("category") AnnouncementCategory category, @Param("keyword") String keyword, Pageable pageable);
+
+    /**
+     * 특정 날짜 이후 작성된 최신 공지사항 N건 조회 (대시보드용)
+     */
+    List<Announcement> findTop5ByCreatedAtAfterOrderByCreatedAtDesc(java.time.LocalDateTime date);
 }
