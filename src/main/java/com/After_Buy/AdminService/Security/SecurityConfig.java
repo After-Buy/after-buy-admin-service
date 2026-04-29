@@ -1,10 +1,10 @@
 package com.After_Buy.AdminService.Security;
 
+import com.After_Buy.AdminService.Config.CorsConfig;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
@@ -36,6 +36,8 @@ public class SecurityConfig {
 
 	private final JwtAuthenticationFilter jwtAuthenticationFilter;
 
+	private final CorsConfig corsConfig;
+
 	/**
 	 * Security 필터 체인 설정
 	 *
@@ -45,6 +47,9 @@ public class SecurityConfig {
 	@Bean
 	public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
 		http
+			// CORS 설정 적용 (CorsConfig에서 정의한 CorsConfigurationSource 사용)
+			.cors(cors -> cors.configurationSource(corsConfig.corsConfigurationSource()))
+
 			// REST API이므로 CSRF 비활성화
 			.csrf(AbstractHttpConfigurer::disable)
 
