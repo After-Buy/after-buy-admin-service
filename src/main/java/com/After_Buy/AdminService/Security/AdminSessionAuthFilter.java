@@ -46,6 +46,13 @@ public class AdminSessionAuthFilter extends OncePerRequestFilter {
 			HttpServletResponse response,
 			FilterChain filterChain) throws ServletException, IOException {
 
+		// CORS preflight 요청(OPTIONS 메서드)은 인증 없이 통과
+		// 브라우저가 실제 요청 전 OPTIONS를 먼저 전송하며, 이를 차단하면 CORS 동작 불가
+		if ("OPTIONS".equalsIgnoreCase(request.getMethod())) {
+			filterChain.doFilter(request, response);
+			return;
+		}
+
 		String requestUri = request.getRequestURI();
 
 		// 퍼블릭 경로(Swagger, 로그인 등)는 인증 없이 통과 (접두사 매칭 허용)
