@@ -20,11 +20,13 @@ import java.time.LocalDateTime;
 
 /**
  * 시스템 에러 로그 엔티티
- * 시스템에서 발생하는 에러(Warning/Error)를 기록합니다.
+ * Admin Service 자체 또는 타 마이크로서비스(Auth, Device, Notification)에서
+ * 발생하는 500급 서버 오류를 중앙 수집하여 기록합니다.
  *
  * @since : 2026.04.15
- * @version : 0.0.1
+ * @version : 0.0.2
  * @author : 최준혁
+ * @author : 신태훈 (2026.04.26 — service_name, endpoint_path 컬럼 추가, unresolve() 추가)
  */
 @Entity
 @Getter
@@ -37,6 +39,14 @@ public class ErrorLog {
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	@Column(name = "log_id")
 	private Long logId;
+
+	/** 에러 발생 서비스명 (예: "AUTH", "DEVICE", "NOTIFICATION", "ADMIN") */
+	@Column(name = "service_name", length = 50)
+	private String serviceName;
+
+	/** 에러 발생 엔드포인트 경로 (예: "/api/auth/users/me") */
+	@Column(name = "endpoint_path", length = 500)
+	private String endpointPath;
 
 	@Enumerated(EnumType.STRING)
 	@Column(name = "error_type", nullable = false)
@@ -66,16 +76,44 @@ public class ErrorLog {
 		ERROR
 	}
 
+	/**
+	 * 에러 로그 생성자
+	 * Internal API 수신 시 serviceName, endpointPath 포함하여 저장합니다.
+	 *
+	 * @param serviceName  : 에러 발생 서비스명
+	 * @param endpointPath : 에러 발생 엔드포인트
+	 * @param errorType    : 에러 타입 (WARNING/ERROR)
+	 * @param errorMessage : 에러 메시지 요약
+	 * @param fullMessage  : 전체 스택트레이스 등 상세 메시지
+	 * @since : 2026.04.26
+	 * @author : 신태훈
+	 */
 	@Builder
-	public ErrorLog(ErrorType errorType, String errorMessage, String fullMessage) {
+	public ErrorLog(String serviceName, String endpointPath, ErrorType errorType,
+			String errorMessage, String fullMessage) {
+		this.serviceName = serviceName;
+		this.endpointPath = endpointPath;
 		this.errorType = errorType;
 		this.errorMessage = errorMessage;
 		this.fullMessage = fullMessage;
 		this.isResolved = 0;
 	}
 
+	/**
+	 * 에러 해결 처리 — is_resolved=1, resolved_at=NOW() 설정
+	 */
 	public void resolve() {
 		this.isResolved = 1;
 		this.resolvedAt = LocalDateTime.now();
+	}
+
+	/**
+	 * 에러 해결 취소 — is_resolved=0, resolved_at=null 초기화 (토글)
+	 * @since : 2026.04.26
+	 * @author : 신태훈
+	 */
+	public void unresolve() {
+		this.isResolved = 0;
+		this.resolvedAt = null;
 	}
 }

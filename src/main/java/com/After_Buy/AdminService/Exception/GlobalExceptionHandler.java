@@ -1,7 +1,10 @@
 package com.After_Buy.AdminService.Exception;
 
 import com.After_Buy.AdminService.Dto.Response.ErrorResponse;
+import com.After_Buy.AdminService.Entity.ErrorLog;
+import com.After_Buy.AdminService.Repository.ErrorLogRepository;
 import jakarta.servlet.http.HttpServletRequest;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
@@ -9,6 +12,8 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -19,15 +24,19 @@ import java.util.List;
  * 처리 항목:
  * 1. CustomException - 비즈니스 예외 (의도된 예외)
  * 2. MethodArgumentNotValidException - @Valid 유효성 검사 실패
- * 3. Exception - 비처리 서버 오류 (500)
+ * 3. Exception - 비처리 서버 오류 (500) → error_logs 테이블에 자동 저장
  *
  * @author 최준혁
+ * @author 신태훈 (2026.04.26 — handleException error_logs 자동 저장 로직 추가)
  * @since 2026.03.26
- * @version 0.0.1
+ * @version 0.0.2
  */
 @Slf4j
 @RestControllerAdvice
+@RequiredArgsConstructor
 public class GlobalExceptionHandler {
+
+	private final ErrorLogRepository errorLogRepository;
 
 	/**
 	 * 비즈니스 커스텀 예외 처리
@@ -100,11 +109,13 @@ public class GlobalExceptionHandler {
 	/**
 	 * 처리되지 않은 서버 내부 예외 처리 (최종 디펜스 라인)
 	 * NullPointerException, DB 타임아웃 등 예상치 못한 500급 예외를 처리합니다.
-	 * TODO: error_logs 테이블에 DB 로깅 추가 (ErrorLog 엔티티 구현 후)
+	 * Admin Service 자체 발생 예외도 error_logs 테이블에 자동 저장됩니다. (service_name = "ADMIN")
 	 *
 	 * @param e       발생한 예외
 	 * @param request 현재 HTTP 요청 (path 추출용)
 	 * @return 500 Internal Server Error 응답 JSON
+	 * @since : 2026.04.26
+	 * @author : 신태훈
 	 */
 	@ExceptionHandler(Exception.class)
 	public ResponseEntity<ErrorResponse> handleException(
@@ -112,6 +123,32 @@ public class GlobalExceptionHandler {
 			HttpServletRequest request
 	) {
 		log.error("[UnhandledException] path={}, message={}", request.getRequestURI(), e.getMessage(), e);
+
+		/* Admin Service 자체 500 예외를 error_logs 테이블에 저장 */
+		try {
+			String errorMessage = e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName();
+			if (errorMessage.length() > 500) {
+				errorMessage = errorMessage.substring(0, 497) + "...";
+			}
+
+			/* 스택트레이스를 문자열로 변환 */
+			StringWriter sw = new StringWriter();
+			e.printStackTrace(new PrintWriter(sw));
+			String fullMessage = sw.toString();
+
+			ErrorLog errorLog = ErrorLog.builder()
+					.serviceName("ADMIN")
+					.endpointPath(request.getRequestURI())
+					.errorType(ErrorLog.ErrorType.ERROR)
+					.errorMessage(errorMessage)
+					.fullMessage(fullMessage)
+					.build();
+			errorLogRepository.save(errorLog);
+
+		} catch (Exception saveException) {
+			/* 에러 로그 저장 실패 시 콘솔 로그만 출력 (2차 장애 방지) */
+			log.error("[UnhandledException] error_logs 저장 실패: {}", saveException.getMessage());
+		}
 
 		ErrorResponse response = ErrorResponse.builder()
 				.timestamp(LocalDateTime.now())
