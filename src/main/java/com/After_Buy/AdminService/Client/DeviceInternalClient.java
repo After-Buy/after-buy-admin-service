@@ -2,7 +2,6 @@ package com.After_Buy.AdminService.Client;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -15,22 +14,27 @@ import java.time.LocalDate;
  * Device Service 내부 API 호출 클라이언트
  *
  * @since : 2026.04.15
- * @version : 0.0.1
+ * @version : 0.0.2
  * @author : 최준혁
  */
 @Slf4j
 @Component
-@RequiredArgsConstructor
 public class DeviceInternalClient {
 
 	private final WebClient webClient;
 	private final ObjectMapper objectMapper;
 
-	@Value("${INTERNAL_SECRET_KEY}")
-	private String internalSecret;
-
-	@Value("${DEVICE_SERVICE_URL}")
-	private String deviceServiceUrl;
+	public DeviceInternalClient(
+			WebClient.Builder webClientBuilder,
+			ObjectMapper objectMapper,
+			@Value("${services.device-url}") String deviceUrl,
+			@Value("${internal.secret-key}") String internalSecret) {
+		this.webClient = webClientBuilder
+				.baseUrl(deviceUrl)
+				.defaultHeader("X-Internal-Secret", internalSecret)
+				.build();
+		this.objectMapper = objectMapper;
+	}
 
 	/**
 	 * OCR 실패 통계 조회 (최근 7일 - 대시보드 요약용 기본값 유지)
@@ -45,11 +49,9 @@ public class DeviceInternalClient {
 	 * OCR 실패 통계 조회 (동적 기간 설정)
 	 */
 	public Mono<JsonNode> getOcrStatsMono(LocalDate startDate, LocalDate endDate) {
-		String url = deviceServiceUrl + "/internal/ocr-stats?start_date={sd}&end_date={ed}";
-
 		return webClient.get()
-				.uri(url, startDate.toString(), endDate.toString())
-				.header("X-Internal-Secret", internalSecret)
+				.uri("/internal/ocr-stats?start_date={sd}&end_date={ed}",
+						startDate.toString(), endDate.toString())
 				.retrieve()
 				.bodyToMono(String.class)
 				.flatMap(responseString -> {

@@ -175,7 +175,7 @@ public class StatsServiceImpl implements StatsService {
 						return objectMapper.treeToValue(node, DashboardUserStatsResponse.class);
 					} catch (Exception e) {
 						log.error("[StatsServiceImpl] 사용자 통계 파싱 실패: {}", e.getMessage());
-						return null;
+						return DashboardUserStatsResponse.builder().build();
 					}
 				})
 				.block();

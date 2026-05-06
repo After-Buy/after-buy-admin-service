@@ -21,6 +21,7 @@ public enum ErrorCode {
 	ADMIN_ACCOUNT_LOCKED(HttpStatus.valueOf(423), "ADMIN-002", "실패 횟수 초과로 계정이 잠겼습니다. 관리자에게 문의해주세요."),
 	ADMIN_LOGIN_LOG_NOT_FOUND(HttpStatus.NOT_FOUND, "ADMIN-006", "존재하지 않거나 보존기간이 지난 로그입니다."),
 	UNAUTHORIZED_ADMIN_SESSION(HttpStatus.UNAUTHORIZED, "ADMIN-007", "세션이 만료되었거나 유효하지 않습니다."),
+	UNAUTHORIZED_INTERNAL_SECRET(HttpStatus.UNAUTHORIZED, "ADMIN-008", "유효하지 않은 내부 시크릿 키입니다."),
 
 	/* ===== 공지사항 (ADMIN-003) ===== */
 	ANNOUNCEMENT_NOT_FOUND(HttpStatus.NOT_FOUND, "ADMIN-003", "존재하지 않는 공지사항입니다."),
