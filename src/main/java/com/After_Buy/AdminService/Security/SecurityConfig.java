@@ -17,15 +17,15 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 /**
  * Spring Security 설정
  * Admin Service는 세션 쿠키(ADMIN_SESSION_ID) 기반 인증을 사용합니다.
- * JWT를 사용하지 않으며, 커스텀 세션 필터(AdminSessionAuthFilter)로 인증을 처리합니다.
  *
  * 인증 흐름:
+ *  /internal/**            → InternalSecretAuthFilter가 전담 (Filter 레벨)
  *  POST /api/admin/auth/login → 인증 없이 허용
- *  그 외 /api/admin/** → AdminSessionAuthFilter가 세션 검증
+ *  그 외 /api/admin/**     → AdminSessionAuthFilter가 세션 검증
  *
  * @author 최준혁
  * @since 2026.03.26
- * @version 0.0.1
+ * @version 0.0.3
  */
 @Configuration
 @EnableWebSecurity
@@ -33,9 +33,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 public class SecurityConfig {
 
 	private final ObjectMapper objectMapper;
-
 	private final JwtAuthenticationFilter jwtAuthenticationFilter;
-
 	private final CorsConfig corsConfig;
 
 	/**
@@ -59,8 +57,9 @@ public class SecurityConfig {
 				.sessionCreationPolicy(SessionCreationPolicy.NEVER)
 			)
 
-			// 엔드포인트 접근 권한 설정 (실제 세션 검증은 AdminSessionAuthFilter에서 전담)
+			// 엔드포인트 접근 권한 설정 (실제 검증은 커스텀 필터에서 전담)
 			.authorizeHttpRequests(auth -> auth
+				.requestMatchers("/internal/**").permitAll()
 				.anyRequest().permitAll()
 			)
 
@@ -68,9 +67,11 @@ public class SecurityConfig {
 			.formLogin(AbstractHttpConfigurer::disable)
 			.httpBasic(AbstractHttpConfigurer::disable)
 
-			// 커스텀 세션 인증 필터 등록 및 JWT 필터 등록
+			// 1) 사용자 JWT 인증 필터 (공지사항 등 일부 경로의 일반 유저 접근용)
 			.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
-			.addFilterAfter(adminSessionAuthFilter(), JwtAuthenticationFilter.class);
+			// 2) 관리자 세션 인증 필터 (/api/admin/** 보호)
+			// (주의: Spring Security 필터 등록 시 커스텀 필터를 기준점으로 삼을 수 없으므로 UsernamePasswordAuthenticationFilter 뒤에 등록)
+			.addFilterAfter(adminSessionAuthFilter(), UsernamePasswordAuthenticationFilter.class);
 
 		return http.build();
 	}

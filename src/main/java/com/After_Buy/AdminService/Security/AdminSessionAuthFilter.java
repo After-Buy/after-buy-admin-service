@@ -32,14 +32,16 @@ public class AdminSessionAuthFilter extends OncePerRequestFilter {
 
 	private final ObjectMapper objectMapper;
 
-	/** 인증 없이 접근 가능한 경로 목록 (로그인 엔드포인트 및 Swagger) */
+	/** 인증 없이 접근 가능한 경로 목록 (로그인 엔드포인트 및 Swagger)
+	 * /internal/** 경로는 InternalSecretAuthFilter가 전담하여 검증합니다. */
 	private static final List<String> PUBLIC_PATHS = List.of(
 			"/api/admin/auth/login",
-			"/swagger-ui",       // Swagger UI 기본 서빙 경로
-			"/v3/api-docs",      // OpenAPI 스펙 JSON 기본 경로
+			"/swagger-ui",           // Swagger UI 기본 서빙 경로
+			"/v3/api-docs",          // OpenAPI 스펙 JSON 기본 경로
 			"/api/admin/swagger-ui", // 배포 환경 Swagger 경로
 			"/api/admin/v3/api-docs", // 배포 환경 OpenAPI 경로
-			"/internal"); // MSA 내부 통신 API 경로
+			"/internal"); // MSA 내부 통신 API 경로 (InternalSecretAuthFilter에서 별도 검증)
+
 
 	@Override
 	protected void doFilterInternal(
