@@ -25,6 +25,11 @@ import java.util.List;
  * @author 최준혁
  * @since 2026.03.26
  * @version 0.0.1
+ *
+ * [수정 이력]
+ * @modified 신태훈
+ * @since 2026.05.07
+ * @version 0.0.2 - GET /api/admin/faqs JWT 허용 경로 추가 (일반 사용자 접근 허용)
  */
 @Slf4j
 @RequiredArgsConstructor
@@ -75,8 +80,10 @@ public class AdminSessionAuthFilter extends OncePerRequestFilter {
 		}
 
 		// GET /api/admin/announcements (목록 및 상세) 경로는 JWT 인증 사용자도 접근 가능
+		// GET /api/admin/faqs (목록 및 상세) 경로는 JWT 인증 사용자도 접근 가능
 		// POST /api/admin/announcements/{id}/read 경로도 JWT 인증 사용자 전용 접근 가능
 		boolean isJwtAllowedPath = ("GET".equalsIgnoreCase(request.getMethod()) && requestUri.startsWith("/api/admin/announcements")) ||
+				("GET".equalsIgnoreCase(request.getMethod()) && requestUri.startsWith("/api/admin/faqs")) ||
 				("POST".equalsIgnoreCase(request.getMethod()) && requestUri.matches("^/api/admin/announcements/\\d+/read$"));
 
 		if (isJwtAllowedPath) {
