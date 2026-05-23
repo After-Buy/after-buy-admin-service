@@ -250,11 +250,42 @@ public class StatsServiceImpl implements StatsService {
 							}
 						}
 
+						List<OcrStatsDetailResponse.FieldFailureStat> fieldFailureStats = new ArrayList<>();
+						if (node.hasNonNull("field_failure_stats") && node.get("field_failure_stats").isArray()) {
+							for (JsonNode fNode : node.get("field_failure_stats")) {
+								String fName = fNode.path("field_name").asText("");
+								long fCount = fNode.path("failure_count").asLong(0L);
+								double fRate = failure > 0 ? (double) fCount / failure * 100.0 : 0.0;
+								fRate = Math.round(fRate * 10.0) / 10.0;
+
+								fieldFailureStats.add(OcrStatsDetailResponse.FieldFailureStat.builder()
+										.fieldName(fName)
+										.failureCount(fCount)
+										.rate(fRate)
+										.build());
+							}
+						}
+
+						List<OcrStatsDetailResponse.DailyResultTrend> dailyResultTrend = new ArrayList<>();
+						if (node.hasNonNull("daily_result_trend") && node.get("daily_result_trend").isArray()) {
+							for (JsonNode tNode : node.get("daily_result_trend")) {
+								dailyResultTrend.add(OcrStatsDetailResponse.DailyResultTrend.builder()
+										.date(tNode.path("date").asText(""))
+										.totalAttempts(tNode.path("total_attempts").asLong(0L))
+										.successCount(tNode.path("success_count").asLong(0L))
+										.modifiedCount(tNode.path("modified_count").asLong(0L))
+										.failureCount(tNode.path("failure_count").asLong(0L))
+										.build());
+							}
+						}
+
 						return OcrStatsDetailResponse.builder()
 								.period(safePeriod)
 								.summary(summary)
 								.fieldModifiedStats(fieldStats)
+								.fieldFailureStats(fieldFailureStats)
 								.dailyFailureTrend(dailyTrend)
+								.dailyResultTrend(dailyResultTrend)
 								.build();
 
 					} catch (Exception e) {

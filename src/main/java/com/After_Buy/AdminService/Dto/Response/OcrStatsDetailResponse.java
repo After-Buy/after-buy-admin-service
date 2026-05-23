@@ -23,8 +23,14 @@ public class OcrStatsDetailResponse {
 	@JsonProperty("field_modified_stats")
 	private List<FieldModifiedStat> fieldModifiedStats;
 
+	@JsonProperty("field_failure_stats")
+	private List<FieldFailureStat> fieldFailureStats;
+
 	@JsonProperty("daily_failure_trend")
 	private List<DailyFailureTrend> dailyFailureTrend;
+
+	@JsonProperty("daily_result_trend")
+	private List<DailyResultTrend> dailyResultTrend;
 
 	@Getter
 	@Builder
@@ -59,8 +65,38 @@ public class OcrStatsDetailResponse {
 
 	@Getter
 	@Builder
+	public static class FieldFailureStat {
+		@JsonProperty("field_name")
+		private String fieldName;
+
+		@JsonProperty("failure_count")
+		private long failureCount;
+
+		private double rate;
+	}
+
+	@Getter
+	@Builder
 	public static class DailyFailureTrend {
 		private String date;
+
+		@JsonProperty("failure_count")
+		private long failureCount;
+	}
+
+	@Getter
+	@Builder
+	public static class DailyResultTrend {
+		private String date;
+
+		@JsonProperty("total_attempts")
+		private long totalAttempts;
+
+		@JsonProperty("success_count")
+		private long successCount;
+
+		@JsonProperty("modified_count")
+		private long modifiedCount;
 
 		@JsonProperty("failure_count")
 		private long failureCount;

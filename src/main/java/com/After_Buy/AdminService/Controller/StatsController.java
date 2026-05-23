@@ -60,7 +60,7 @@ public class StatsController {
 	 *
 	 * @param period : 조회 기간 단위 (WEEK, MONTH, ALL), 기본값은 MONTH
 	 */
-	@Operation(summary = "OCR 관리 페이지 통계 조회", description = "선택된 기간(WEEK, MONTH, ALL)에 해당하는 OCR 오인식 집계, 필드별 통계, 실패 추이 데이터를 반환합니다.")
+	@Operation(summary = "OCR 관리 페이지 통계 조회", description = "선택된 기간(WEEK, MONTH, ALL)에 해당하는 OCR 오인식 집계, 항목별 통계, 실패 추이, 날짜별 결과 데이터를 반환합니다.")
 	@GetMapping("/ocr-stats")
 	public ResponseEntity<Map<String, Object>> getOcrStats(
 			@RequestParam(defaultValue = "MONTH") String period) {
